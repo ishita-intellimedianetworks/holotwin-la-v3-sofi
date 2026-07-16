@@ -690,8 +690,9 @@
       "label": "2028 Stadium",
       "url": "/models/stadium/stadium-web.glb",
       "navmeshUrl": "/models/stadium/sofi-stadium-navmesh-v2.glb",
-      "floorplanUrl": null,
-      "hsSize": 0.1,
+      "floorplanUrl": "/floorplan/plan-stadium.png",
+      "hsSize": 0.05,
+      "mapListMode": true,
       "routeSanitize": false,
       "shadows": false,
       "dollHouseCamera": {
@@ -732,6 +733,8 @@
             "tags": [
               "Main"
             ],
+            "crowd": "high",
+            "crowdNote": "Heavy flow — expect queues. Gate 2 is clearer.",
             "camera": {
               "position": [
                 -204.846,
@@ -749,6 +752,8 @@
             "id": "sta-lay-ent-gate-2",
             "label": "Entrance Gate 2",
             "option": "Entrances & Gates",
+            "crowd": "low",
+            "crowdNote": "Low flow — fastest way in right now.",
             "camera": {
               "position": [
                 -131.0947,
@@ -766,6 +771,8 @@
             "id": "sta-lay-ent-gate-3",
             "label": "Entrance Gate 3",
             "option": "Entrances & Gates",
+            "crowd": "med",
+            "crowdNote": "Steady flow — short queues.",
             "camera": {
               "position": [
                 140.0709,
@@ -1151,66 +1158,36 @@
             }
           }
         ],
-        "accessibility": [
-          {
-            "id": "sta-access-entry",
-            "label": "Accessible Entry",
-            "option": "Accessible Entry",
-            "camera": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ]
-            }
-          },
-          {
-            "id": "sta-access-seating",
-            "label": "Accessible Seating",
-            "option": "Accessible Seating",
-            "camera": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ]
-            },
-            "exactPose": true
-          },
-          {
-            "id": "sta-assist",
-            "label": "Assistance Point",
-            "option": "Assistance",
-            "camera": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ]
-            }
-          }
-        ],
         "safety": [
           {
             "id": "sta-exit-1",
-            "label": "Emergency Exit — North",
+            "label": "Exit Gate 1 — Level 1",
             "option": "Emergency Exits",
-            "note": "Evacuation route: concourse → Level 1 north gate → assembly area outside.",
+            "note": "Evacuation route: concourse → Level 1 exit gate 1 → assembly area outside.",
+            "tags": [
+              "Egress"
+            ],
+            "camera": {
+              "position": [
+                78.797,
+                10.8681,
+                27.3691
+              ],
+              "rotation": [
+                0.2094,
+                -2.0508,
+                0
+              ]
+            }
+          },
+          {
+            "id": "sta-exit-2",
+            "label": "Exit Gate 2 — Level 1",
+            "option": "Emergency Exits",
+            "note": "Evacuation route: concourse → Level 1 exit gate 2 → assembly area outside.",
+            "tags": [
+              "Egress"
+            ],
             "camera": {
               "position": [
                 0.0629,
@@ -1222,16 +1199,16 @@
                 0,
                 0
               ]
-            },
-            "tags": [
-              "Egress"
-            ]
+            }
           },
           {
-            "id": "sta-exit-2",
-            "label": "Emergency Exit — South",
+            "id": "sta-exit-3",
+            "label": "Exit Gate 3 — Level 1",
             "option": "Emergency Exits",
-            "note": "Evacuation route: concourse → Level 1 south gate → assembly area outside.",
+            "note": "Evacuation route: concourse → Level 1 exit gate 3 → assembly area outside.",
+            "tags": [
+              "Egress"
+            ],
             "camera": {
               "position": [
                 0.0629,
@@ -1243,10 +1220,105 @@
                 -3.1416,
                 0
               ]
-            },
+            }
+          },
+          {
+            "id": "sta-exit-4",
+            "label": "Exit Gate 4 — Level 1",
+            "option": "Emergency Exits",
+            "note": "Evacuation route: concourse → Level 1 exit gate 4 → assembly area outside.",
             "tags": [
               "Egress"
+            ],
+            "camera": {
+              "position": [
+                -82.915,
+                10.8728,
+                -14.3983
+              ],
+              "rotation": [
+                0.2144,
+                1.3947,
+                0
+              ]
+            }
+          }
+        ],
+        "eventupdates": [
+          {
+            "id": "sta-evt-closure",
+            "label": "West Ramp Closed",
+            "option": "Closures",
+            "camera": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ]
+            },
+            "note": "Maintenance until 17:30",
+            "tags": [
+              "Now"
             ]
+          },
+          {
+            "id": "sta-evt-checkpoint",
+            "label": "Screening — Main Gate",
+            "option": "Checkpoints",
+            "camera": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ]
+            },
+            "note": "Bag check active"
+          },
+          {
+            "id": "sta-evt-schedule",
+            "label": "Kickoff On Time",
+            "option": "Schedule",
+            "camera": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ]
+            },
+            "note": "19:00 as scheduled"
+          },
+          {
+            "id": "sta-evt-restricted",
+            "label": "Pitch Access Restricted",
+            "option": "Restricted",
+            "camera": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ]
+            },
+            "note": "Credential required"
           }
         ],
         "services": [
@@ -1404,147 +1476,13 @@
             }
           }
         ],
-        "crowdflow": [
-          {
-            "id": "sta-crowd-concourse",
-            "label": "Main Concourse",
-            "option": "Concourse",
-            "camera": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ]
-            },
-            "crowd": "moderate",
-            "crowdNote": "Moderate · ~6 min at counters"
-          },
-          {
-            "id": "sta-crowd-gates",
-            "label": "Gate 1 Queues",
-            "option": "Gates",
-            "camera": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ]
-            },
-            "crowd": "high",
-            "crowdNote": "Heavy · use Gate 2"
-          },
-          {
-            "id": "sta-crowd-bowl",
-            "label": "Seating Bowl",
-            "option": "Seating Bowl",
-            "camera": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ]
-            },
-            "crowd": "low",
-            "crowdNote": "Clear"
-          }
-        ],
-        "eventupdates": [
-          {
-            "id": "sta-evt-closure",
-            "label": "West Ramp Closed",
-            "option": "Closures",
-            "camera": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ]
-            },
-            "note": "Maintenance until 17:30",
-            "tags": [
-              "Now"
-            ]
-          },
-          {
-            "id": "sta-evt-checkpoint",
-            "label": "Screening — Main Gate",
-            "option": "Checkpoints",
-            "camera": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ]
-            },
-            "note": "Bag check active"
-          },
-          {
-            "id": "sta-evt-schedule",
-            "label": "Kickoff On Time",
-            "option": "Schedule",
-            "camera": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ]
-            },
-            "note": "19:00 as scheduled"
-          },
-          {
-            "id": "sta-evt-restricted",
-            "label": "Pitch Access Restricted",
-            "option": "Restricted",
-            "camera": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ]
-            },
-            "note": "Credential required"
-          }
-        ],
         "infra": [
           {
             "id": "sta-cctv-concession",
             "label": "CCTV — Concessions",
             "showHsIn3d": true,
+            "exactPose": true,
+            "teleportOnly": true,
             "hotspots": [
               {
                 "position": [
@@ -1579,6 +1517,8 @@
             "label": "Wi-Fi AP — Concessions",
             "option": "Wi-Fi",
             "showHsIn3d": true,
+            "exactPose": true,
+            "teleportOnly": true,
             "hotspots": [
               {
                 "position": [
