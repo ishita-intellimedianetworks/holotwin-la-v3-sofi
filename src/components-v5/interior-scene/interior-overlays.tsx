@@ -226,6 +226,16 @@ export default function InteriorOverlays() {
     // A venue swap invalidates any open hotspot-info card (its markers are gone).
     useNavUiStore.getState().setHotspotInfo(null);
   }, [activeFloorIndex]);
+  // A TELEPORT to another destination never passes through the walk-start
+  // close above (isMoving stays false), so an open hotspot card lingered over
+  // the new spot. Close it as soon as the latched destination stops matching
+  // the card's destination.
+  useEffect(() => {
+    const store = useNavUiStore.getState();
+    if (store.hotspotInfo && store.hotspotInfo.destId !== currentDest?.id) {
+      store.setHotspotInfo(null);
+    }
+  }, [currentDest?.id]);
 
   // "Explore the accommodation" — the floor authored as a transition. Used only
   // to label the accommodation overlay now that the enter-interior action is off.
@@ -463,7 +473,10 @@ export default function InteriorOverlays() {
         // Per-hotspot guest copy (scenes.json `hotspots[].note`) wins over the
         // destination-level note — e.g. Lost & Found and the Information Desk
         // share one destination but tell different stories.
-        const hSpot = hDest?.hotspots?.[hotspotInfo.index];
+        // `index` is 1-based (it doubles as the display "spot N"); the
+        // hotspots array is 0-based — without the -1 every per-hotspot note
+        // read the NEXT spot's copy (or none at all on single-hotspot dests).
+        const hSpot = hDest?.hotspots?.[hotspotInfo.index - 1];
         const body = hSpot?.note ?? hDest?.note;
         // The IT/ops "Technical details" block is for INFRA device markers
         // only (CCTV / Wi-Fi). Guest-facing hotspots (services etc.) get pure

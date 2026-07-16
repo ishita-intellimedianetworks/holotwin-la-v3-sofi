@@ -29,9 +29,11 @@ const MARKER_KEEP_UNITS = 15;
 interface HotspotMarkersProps {
   ctrlRef: React.RefObject<PlayerControllerHandle | null>;
   dests?: DestinationsByCategory;
+  /** Per-venue marker disc radius (FloorConfig.hsSize); default 0.2. */
+  hsSize?: number;
 }
 
-export function HotspotMarkers({ ctrlRef, dests }: HotspotMarkersProps) {
+export function HotspotMarkers({ ctrlRef, dests, hsSize }: HotspotMarkersProps) {
   const currentDest = useNavUiStore((s) => s.currentDest);
   // The marker whose info overlay is open hides — the card IS that marker,
   // so the disc pulsing behind it would just be noise. Back on close.
@@ -90,7 +92,7 @@ export function HotspotMarkers({ ctrlRef, dests }: HotspotMarkersProps) {
           position={pos}
           rotation={rot}
           title={label ?? dest.label}
-          size={0.2}
+          size={hsSize ?? 0.2}
           pulse
           onHotspotClick={() =>
             useNavUiStore.getState().setHotspotInfo({

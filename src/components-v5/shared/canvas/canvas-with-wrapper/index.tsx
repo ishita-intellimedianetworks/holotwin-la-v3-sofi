@@ -9,6 +9,16 @@ import isLowPower from "@/components-v5/shared/helpers";
 const defaultPos = entry.position;
 const defaultRot = entry.rotation;
 
+// three r183 deprecated THREE.Clock, but @react-three/fiber (≤ 9.x) still
+// constructs one inside its store — a warning the app can't act on until R3F
+// v10 migrates to THREE.Timer. Drop that one known notice via three's official
+// console hook; every other three log/warn/error passes through untouched.
+THREE.setConsoleFunction((type: string, message: string, ...params: unknown[]) => {
+  if (type === "warn" && typeof message === "string" && message.startsWith("THREE.Clock: This module has been deprecated")) return;
+  const fn = type === "error" ? console.error : type === "warn" ? console.warn : console.log;
+  fn(message, ...params);
+});
+
 
 type Props = PropsWithChildren<{
   initialPosition?: [number, number, number];

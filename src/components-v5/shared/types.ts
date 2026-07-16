@@ -384,6 +384,10 @@ export type FloorConfig = {
   layoutsInfo?: { id: string; name: string; meta?: string }[];
   furniture?: FurnitureConfig;
   transitions?: FloorTransition[];
+  /** 3D hotspot marker disc radius (world units) for this floor's `showHsIn3d`
+   *  destinations. Default 0.2 — venues where that reads too large (the
+   *  stadium's wall-mounted markers sit right at eye height) dial it down. */
+  hsSize?: number;
   /** Points of interest, grouped by category label (restaurants/practice/transport). */
   dests?: DestinationsByCategory;
   /** Destination venues for the transport flow — each references a `hubId` in

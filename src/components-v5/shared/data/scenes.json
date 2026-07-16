@@ -688,9 +688,10 @@
     {
       "key": "stadium",
       "label": "2028 Stadium",
-      "url": "/models/stadium/25-web.glb",
+      "url": "/models/stadium/stadium-web.glb",
       "navmeshUrl": "/models/stadium/sofi-stadium-navmesh-v2.glb",
       "floorplanUrl": null,
+      "hsSize": 0.1,
       "routeSanitize": false,
       "shadows": false,
       "dollHouseCamera": {
@@ -767,13 +768,13 @@
             "option": "Entrances & Gates",
             "camera": {
               "position": [
-                129.95,
+                140.0709,
                 41.7194,
-                -75.098
+                -67.9902
               ],
               "rotation": [
-                -0.0436,
-                -2.8536,
+                0.0619,
+                2.9727,
                 0
               ]
             }
@@ -789,7 +790,7 @@
                 27.3691
               ],
               "rotation": [
-                -0.0262,
+                0.2094,
                 -2.0508,
                 0
               ]
@@ -806,7 +807,7 @@
                 -52.2449
               ],
               "rotation": [
-                -0.2618,
+                -0.3368,
                 0,
                 0
               ]
@@ -823,7 +824,7 @@
                 52.2396
               ],
               "rotation": [
-                -0.2618,
+                -0.3368,
                 -3.1416,
                 0
               ]
@@ -840,8 +841,8 @@
                 -14.3983
               ],
               "rotation": [
-                0.0625,
-                1.4401,
+                0.2144,
+                1.3947,
                 0
               ]
             }
@@ -1217,7 +1218,7 @@
                 -52.2449
               ],
               "rotation": [
-                -0.2618,
+                -0.3368,
                 0,
                 0
               ]
@@ -1238,7 +1239,7 @@
                 52.2396
               ],
               "rotation": [
-                -0.2618,
+                -0.3368,
                 -3.1416,
                 0
               ]
@@ -1265,6 +1266,13 @@
                   0,
                   -1.3382,
                   0
+                ],
+                "note": "Staffed guest-services desk on the upper concourse — the first stop for schedules, directions and general event help.",
+                "points": [
+                  "Event schedule & session times",
+                  "Wayfinding & seat directions",
+                  "Multilingual guest support",
+                  "Accessibility & mobility help"
                 ]
               }
             ],
@@ -1297,6 +1305,12 @@
                   0,
                   -1.1731,
                   0
+                ],
+                "note": "Lost & Found intake and pickup counter. Found items are logged here and held until one hour after the day's final session.",
+                "points": [
+                  "Report a lost item",
+                  "Collect found items — photo ID required",
+                  "Follow up on an earlier report"
                 ]
               }
             ],
@@ -1329,6 +1343,12 @@
                   0,
                   -0.7221,
                   0
+                ],
+                "note": "First-aid station staffed by certified medics for the full event window — walk in, or ask any steward to radio ahead.",
+                "points": [
+                  "First aid & AED on site",
+                  "Medication storage & refrigeration",
+                  "Wheelchair assistance"
                 ]
               }
             ],
@@ -1361,6 +1381,12 @@
                   0,
                   -2.4195,
                   0
+                ],
+                "note": "First-aid station equipped for on-site treatment and rapid escalation to the stadium medical centre when needed.",
+                "points": [
+                  "First aid & AED on site",
+                  "Rapid-response escalation",
+                  "Wheelchair assistance"
                 ]
               }
             ],
@@ -1371,7 +1397,7 @@
                 -88.6136
               ],
               "rotation": [
-                0,
+                0.0314,
                 -2.4574,
                 0
               ]
@@ -1530,7 +1556,8 @@
                   0,
                   -1.2129,
                   0
-                ]
+                ],
+                "note": "Fixed dome camera covering the concession queue — feeds the LA28 operations room for crowd-density monitoring."
               }
             ],
             "option": "Cameras",
@@ -1563,7 +1590,8 @@
                   0,
                   1.5696,
                   0
-                ]
+                ],
+                "note": "Ceiling-mounted Wi-Fi 6E access point serving the concession concourse. Public SSID: LA28-Guest."
               }
             ],
             "camera": {

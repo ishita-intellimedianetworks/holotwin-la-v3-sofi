@@ -1030,7 +1030,7 @@ export function SceneContent({
           category's pins so placement can be checked from the air. Click →
           show the destination info + walk to its camera. */}
       {!activeFloor?.interior && (
-        <HotspotMarkers ctrlRef={playerControllerRef} dests={activeFloor?.dests} />
+        <HotspotMarkers ctrlRef={playerControllerRef} dests={activeFloor?.dests} hsSize={activeFloor?.hsSize} />
       )}
 
       {/* Crowd-flow heatmap GLB (memorial) — zone meshes tinted by congestion

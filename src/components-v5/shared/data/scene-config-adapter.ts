@@ -36,6 +36,8 @@ const scenes = cfg.scenes as Array<{
   routeSanitize?: boolean;
   /** Authored under the legacy "pois" key in scenes.json. */
   pois?: DestinationsByCategory;
+  /** 3D hotspot marker disc radius (world units) — see FloorConfig.hsSize. */
+  hsSize?: number;
   transportDestinations?: TransportDestination[];
   events?: EventUpdate[];
   crowdFlow?: CrowdFlowConfig;
@@ -68,6 +70,7 @@ const floors = scenes.map((s) => ({
   clickSnapToNav: s.clickSnapToNav,
   routeSanitize: s.routeSanitize,
   dests:         s.pois,
+  hsSize:        s.hsSize,
   transportDestinations: s.transportDestinations,
   events:        s.events,
   crowdFlow:     s.crowdFlow,

@@ -14,7 +14,9 @@ import {
   type ReactNode,
 } from "react";
 import { useSearchParams } from "next/navigation";
+import { useGLTF } from "@react-three/drei";
 
+import isLowPower from "@/components-v5/shared/helpers";
 import { nodes, defaultApartmentId } from "@/components-v5/shared/data/scene-config-adapter";
 import {
   findNode,
@@ -458,6 +460,47 @@ export default function InteriorInlineProvider({
     });
     return () => { cancelled = true; };
   }, [floors]);
+
+  // Idle PRE-PARSE of the inactive venues' GLBs (the warm effect above only
+  // gets the BYTES into the HTTP cache — the expensive part of a venue swap is
+  // GLTFLoader parse + scene-graph build, which otherwise runs entirely under
+  // the swap blackout, holding it for seconds). Two moments need this:
+  //   • right after the initial load — every venue's FIRST swap-in;
+  //   • after every swap — the outgoing venue's parsed GLTF is evicted by
+  //     releaseGLTF (deliberate memory policy), so RETURNING to it re-parses.
+  // Re-running on every activeFloorIndex change re-fills whichever entries
+  // were just evicted. useGLTF.preload with an already-cached URL is a no-op,
+  // and idle callbacks run after release's microtask-deferred eviction, so
+  // this never races the dispose. Skipped on low-power devices — holding all
+  // venues parsed is a real memory cost that only desktops should pay.
+  useEffect(() => {
+    if (!isReady || !othersCached || isLowPower()) return;
+    const urls = floors
+      .filter((_, i) => i !== activeFloorIndex)
+      .map((f) => f.modelUrl)
+      .filter((u): u is string => !!u);
+    if (urls.length === 0) return;
+    const win = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (h: number) => void;
+    };
+    // Small lead delay so the swap's own reveal/settle isn't competing with a
+    // background parse, then one idle slot per venue.
+    const handles: number[] = [];
+    const timer = setTimeout(() => {
+      for (const u of urls) {
+        if (win.requestIdleCallback) {
+          handles.push(win.requestIdleCallback(() => useGLTF.preload(u), { timeout: 8000 }));
+        } else {
+          useGLTF.preload(u);
+        }
+      }
+    }, 3000);
+    return () => {
+      clearTimeout(timer);
+      handles.forEach((h) => win.cancelIdleCallback?.(h));
+    };
+  }, [isReady, othersCached, activeFloorIndex, floors]);
 
   const interiorContextValue = useMemo<InteriorContextValue>(
     () => ({
