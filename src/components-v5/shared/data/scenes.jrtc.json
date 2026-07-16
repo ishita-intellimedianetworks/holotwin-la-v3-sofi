@@ -1,0 +1,852 @@
+{
+  "_note": "Parked stadium scene. NOT imported anywhere — kept for later. To re-enable, move this object back into scenes.json's `scenes` array.",
+  "scene": {
+    "key": "jrtc",
+    "label": "2028 Stadium - Inglewood",
+    "url": "/models/jrtc.glb",
+    "navmeshUrl": "/models/navmesh/jrtc.glb",
+    "floorplanUrl": "/floorplan/jrtc.png",
+    "shadows": false,
+    "startPosition": [
+      0,
+      0,
+      0
+    ],
+    "startRotation": [
+      0,
+      0,
+      0
+    ],
+    "dollHouseCamera": {
+      "position": [
+        26,
+        185,
+        250
+      ],
+      "rotation": [
+        -0.55,
+        0,
+        0
+      ]
+    },
+    "pois": {
+      "entrance": [
+        {
+          "id": "ent-main",
+          "label": "Main Entrance",
+          "option": "Main Entrance",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "ent-gate-1",
+          "label": "Gate 1 — East",
+          "option": "Gates",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "ent-gate-3",
+          "label": "Gate 3 — VIP",
+          "option": "Gates",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "ent-gate-6",
+          "label": "Gate 6 — North",
+          "option": "Gates",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        }
+      ],
+      "seating": [
+        {
+          "id": "seat-vip",
+          "label": "VIP Box View",
+          "option": "VIP",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          },
+          "exactPose": true
+        },
+        {
+          "id": "seat-standard",
+          "label": "Standard Lower View",
+          "option": "Standard",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          },
+          "exactPose": true
+        },
+        {
+          "id": "seat-general",
+          "label": "General Bowl View",
+          "option": "General",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          },
+          "exactPose": true
+        },
+        {
+          "id": "seat-economy",
+          "label": "Upper Tier View",
+          "option": "Economy",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          },
+          "exactPose": true
+        }
+      ],
+      "services": [
+        {
+          "id": "svc-conc-grill",
+          "label": "Coliseum Grill",
+          "option": "Concessions",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "svc-conc-beer",
+          "label": "Craft Beer Hall",
+          "option": "Concessions",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "svc-stall-street",
+          "label": "Street Food Stall",
+          "option": "Food Stalls",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "svc-stall-snack",
+          "label": "Snack Kiosk",
+          "option": "Food Stalls",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "svc-merch-store",
+          "label": "Team Store",
+          "option": "Merchandise",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "svc-merch-popup",
+          "label": "LA28 Pop-Up",
+          "option": "Merchandise",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        }
+      ],
+      "discovery": [
+        {
+          "id": "disc-info",
+          "label": "Information Desk",
+          "option": "Information",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "disc-lost",
+          "label": "Lost & Found",
+          "option": "Lost & Found",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "disc-med",
+          "label": "Medical / First Aid",
+          "option": "Medical",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "disc-rest-215",
+          "label": "Restroom 215",
+          "option": "Restrooms",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "disc-rest-family",
+          "label": "Family Restroom",
+          "option": "Restrooms",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        }
+      ],
+      "accessibility": [
+        {
+          "id": "acc-elev-e2",
+          "label": "Elevator E2",
+          "option": "Elevators",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "acc-elev-e5",
+          "label": "Elevator E5",
+          "option": "Elevators",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "acc-ramp-ne",
+          "label": "NE Ramp to Bowl",
+          "option": "Ramps",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "acc-ramp-plaza",
+          "label": "Plaza Ramp",
+          "option": "Ramps",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "acc-seat-lower",
+          "label": "Accessible Seating — Lower",
+          "option": "Accessible Seating",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "acc-assist-gsp",
+          "label": "Guest Services Point",
+          "option": "Assistance Points",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "acc-assist-escort",
+          "label": "Wheelchair Escort",
+          "option": "Assistance Points",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        }
+      ],
+      "safety": [
+        {
+          "id": "safe-exit-a",
+          "label": "Emergency Exit A",
+          "option": "Emergency Exits",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "safe-exit-b",
+          "label": "Emergency Exit B",
+          "option": "Emergency Exits",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "safe-firstaid",
+          "label": "First Aid Station",
+          "option": "First Aid",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "safe-security",
+          "label": "Security Office",
+          "option": "Security Office",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "safe-assembly",
+          "label": "Emergency Assembly — Lot C",
+          "option": "Assembly Point",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        }
+      ],
+      "transit": [
+        {
+          "id": "tr-bus",
+          "label": "Stadium Bus Stop",
+          "option": "Bus Stop",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "tr-park-a",
+          "label": "Lot A Parking",
+          "option": "Parking",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "tr-park-c",
+          "label": "Lot C Parking",
+          "option": "Parking",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        },
+        {
+          "id": "tr-ride",
+          "label": "Rideshare Pickup",
+          "option": "Rideshare",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          }
+        }
+      ],
+      "cctv": [
+        {
+          "id": "cctv-north",
+          "label": "Camera — North Stand",
+          "option": "CCTV",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          },
+          "hotspot": {
+            "position": [
+              0.08,
+              1.5,
+              16.5
+            ]
+          }
+        },
+        {
+          "id": "cctv-south",
+          "label": "Camera — South Stand",
+          "option": "CCTV",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          },
+          "hotspot": {
+            "position": [
+              0.08,
+              1.5,
+              16.5
+            ]
+          }
+        },
+        {
+          "id": "cctv-ap-concourse",
+          "label": "AP — Concourse",
+          "option": "Access Points",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          },
+          "hotspot": {
+            "position": [
+              0.08,
+              1.5,
+              16.5
+            ]
+          }
+        },
+        {
+          "id": "cctv-ap-bowl",
+          "label": "AP — Bowl",
+          "option": "Access Points",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          },
+          "hotspot": {
+            "position": [
+              0.08,
+              1.5,
+              16.5
+            ]
+          }
+        },
+        {
+          "id": "cctv-zone-tunnel",
+          "label": "Player Tunnel",
+          "option": "Restricted Zones",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          },
+          "hotspot": {
+            "position": [
+              0.08,
+              1.5,
+              16.5
+            ]
+          }
+        },
+        {
+          "id": "cctv-zone-control",
+          "label": "Control Room",
+          "option": "Restricted Zones",
+          "camera": {
+            "position": [
+              0.08,
+              0,
+              22.72
+            ],
+            "rotation": [
+              -0.0674,
+              -0.1622,
+              0
+            ]
+          },
+          "hotspot": {
+            "position": [
+              0.08,
+              1.5,
+              16.5
+            ]
+          }
+        }
+      ]
+    },
+    "events": [
+      {
+        "id": "ev-security",
+        "kind": "alert",
+        "severity": "medium",
+        "title": "Security checkpoint at Gates 1–3",
+        "detail": "Allow extra time"
+      },
+      {
+        "id": "ev-closure",
+        "kind": "closure",
+        "severity": "high",
+        "title": "North Plaza closed until 16:00",
+        "detail": "Use East entrance",
+        "time": "Until 16:00"
+      },
+      {
+        "id": "ev-ceremony",
+        "kind": "schedule",
+        "severity": "low",
+        "title": "Ceremony begins 20:00",
+        "detail": "Gates open 17:30",
+        "time": "20:00"
+      },
+      {
+        "id": "ev-bags",
+        "kind": "info",
+        "severity": "medium",
+        "title": "Clear bag policy in effect",
+        "detail": "No bags over 12\"×6\"×12\""
+      }
+    ],
+    "crowdFeed": [
+      {
+        "name": "Gate 1 — East",
+        "status": "Heavy congestion",
+        "wait": "~14 min",
+        "level": "high"
+      },
+      {
+        "name": "Gate 3 — VIP Entry",
+        "status": "Moderate flow",
+        "wait": "~6 min",
+        "level": "med"
+      },
+      {
+        "name": "Gate 6 — North",
+        "status": "Clear",
+        "wait": "<2 min",
+        "level": "low"
+      },
+      {
+        "name": "Concourse 200",
+        "status": "Light",
+        "wait": "flowing",
+        "level": "low"
+      }
+    ]
+  }
+}
