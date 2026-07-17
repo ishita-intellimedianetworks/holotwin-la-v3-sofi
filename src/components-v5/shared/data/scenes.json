@@ -56,7 +56,7 @@
           5.9,
           -2.6
         ],
-        "shadowMapSize": 2048,
+        "shadowMapSize": 1024,
         "shadowRadius": 0.5,
         "shadowBias": -0.0005,
         "shadowNormalBias": 0.55
@@ -268,7 +268,7 @@
           5.9,
           -2.6
         ],
-        "shadowMapSize": 2048,
+        "shadowMapSize": 1024,
         "shadowRadius": 1.5,
         "shadowBias": -0.0005,
         "shadowNormalBias": 0.4,
@@ -328,7 +328,7 @@
           5,
           3.8
         ],
-        "shadowMapSize": 2048,
+        "shadowMapSize": 1024,
         "shadowRadius": 0.5,
         "shadowBias": -0.0078,
         "shadowNormalBias": 0.2,

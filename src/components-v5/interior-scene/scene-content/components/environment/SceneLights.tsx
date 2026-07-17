@@ -22,8 +22,12 @@ const DEFAULT_LIGHTS = {
   // shadow camera are fitted to the model bounds so the sun and shadows frame
   // whichever model is active, regardless of its world units.
   sunDirection: [-1.5, 5.9, -2.6] as [number, number, number],
-  // Shadow map resolution (square).
-  shadowMapSize: 2048,
+  // Shadow map resolution (square). 1024 halves the shadow texture bandwidth
+  // vs 2048 — the map is frozen after load, so the per-frame cost is the
+  // full-screen PCF sampling, and smaller maps sample cheaper (better texture
+  // cache locality). Visually near-identical at these venue scales because
+  // shadowRadius blurs the edges anyway.
+  shadowMapSize: 1024,
   shadowRadius: 0.5,
   shadowBias: -0.0005,
   shadowNormalBias: 0.55,

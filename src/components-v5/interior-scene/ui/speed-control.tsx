@@ -5,9 +5,9 @@ import type { RefObject } from "react";
 import type { PlayerControllerHandle } from "../scene-content/components/player-controller";
 import { navConfig } from "../nav-config";
 
-const SPEEDS = [5, 3, 1] as const;
+const SPEEDS = [1, 3, 5] as const;
 
-/** Walk-speed multiplier control (5× / 3× / 1×), shown while walking. Each
+/** Walk-speed multiplier control (1× / 3× / 5×), shown while walking. Each
  *  walk starts at the default 5× (reset in navigateToPoint); tapping applies it live.
  *
  *  The controller's `speedMult` is the single source of truth: this control can

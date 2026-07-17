@@ -392,7 +392,7 @@ export default function InteriorOverlays() {
     <>
       <ForceLandscape />
       {/* Device fullscreen toggle — self-gates to touch devices in landscape. */}
-      <FullscreenButton />
+      {/* <FullscreenButton /> */}
       {!inlineMode && showHud && (
         <HoloTwinHud
           progress={0}
