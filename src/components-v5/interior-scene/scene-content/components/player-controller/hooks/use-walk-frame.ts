@@ -58,12 +58,17 @@ const _walkRamp = { prevMoving: false, t: 1 };
 // snaps the movement vector the instant pathI advances — a visible lateral
 // jerk at every bend. Instead the walk direction eases toward the current
 // segment's direction (frame-rate-independent exponential), carving a short
-// smooth arc through each corner. Within ARRIVE_DIRECT of the waypoint the
-// direction is exact so the arrival threshold always trips; the deviation from
-// the drawn route is a few tens of cm at most (the Y probe already tolerates
-// brief off-mesh corner cuts). Module-level (single player), reset per walk.
+// smooth arc through each corner. Close to the waypoint the direction is exact
+// so the arrival threshold always trips; that direct zone is only a few
+// frame-steps (whichever of stepLen*4 / 3 waypoint-thresholds is larger — NOT
+// a fixed 0.5u floor, and NOT scaled by the speed multiplier: the old 0.5u
+// floor exceeded the waypoint spacing on dense navmeshes like the memorial's
+// sub-unit strips, so steering ran permanently direct there and the direction
+// snapped at every waypoint — 5× made those snaps 5× as frequent). The
+// deviation from the drawn route is a few tens of cm at most (the Y probe
+// already tolerates brief off-mesh corner cuts). Module-level (single
+// player), reset per walk.
 const STEER_RATE = 8;      // 1/s — ~95% converged in ~0.4s
-const ARRIVE_DIRECT = 0.5; // world units — go straight at the waypoint inside this
 const _moveDir = { x: 0, z: 0 };
 
 // ── Spatial grid for the floor probe ─────────────────────────────────────────
@@ -299,7 +304,7 @@ function runWalkFrame(o: UseWalkFrameOptions, delta: number): void {
       const uz = dz / distXZ;
       let mx = ux;
       let mz = uz;
-      if (distXZ > ARRIVE_DIRECT * mult && (_moveDir.x !== 0 || _moveDir.z !== 0)) {
+      if (distXZ > Math.max(WAYPOINT_THRESHOLD * 3, stepLen * 4) && (_moveDir.x !== 0 || _moveDir.z !== 0)) {
         const a = 1 - Math.exp(-STEER_RATE * turnBoost * dt);
         mx = _moveDir.x + (ux - _moveDir.x) * a;
         mz = _moveDir.z + (uz - _moveDir.z) * a;
@@ -318,9 +323,12 @@ function runWalkFrame(o: UseWalkFrameOptions, delta: number): void {
     }
 
     // ── Look-ahead: aim yaw at a point ahead on the path ──────────────────
-    // Scaled with speed: at 5× the same 4u is covered in a fraction of the
-    // time, so an unscaled look-ahead makes the yaw target lurch at bends.
-    let rem = LOOK_AHEAD_DISTANCE * turnBoost;
+    // Scaled LINEARLY with speed so the look-ahead horizon is constant in
+    // TIME (the same seconds-ahead at any multiplier). With the old √mult
+    // scaling the horizon shrank as speed rose, so at 5× the yaw target
+    // swept corners ~2.2× faster than at 1× and saturated the turn-rate
+    // clamp — a constant-rate spin with an abrupt stop at every bend.
+    let rem = LOOK_AHEAD_DISTANCE * mult;
     _ahead.copy(pos.current);
     for (let i = pathI.current; i < path.current.length && rem > 0; i++) {
       const wp2 = path.current[i];
@@ -552,7 +560,11 @@ function runWalkFrame(o: UseWalkFrameOptions, delta: number): void {
   // while standing still, but clearly JERKY once the idle auto-rotation pans the
   // view. Holding Y while idle keeps the pan dead-level.
   if (moving.current) {
-    const yAlpha = 1 - Math.exp(-Y_LERP_SPEED * dt);
+    // Scaled with the walk speed (√mult, same as the turn boosts): at 5× the
+    // surface Y under the player changes 5× faster, and an unscaled rate let
+    // the camera sink ~half a metre behind on stairs, then pop at the top.
+    const yBoost = Math.max(1, Math.sqrt(speedMult.current));
+    const yAlpha = 1 - Math.exp(-Y_LERP_SPEED * yBoost * dt);
     pos.current.y += (targetY.current - pos.current.y) * yAlpha;
   }
 

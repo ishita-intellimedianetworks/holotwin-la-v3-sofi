@@ -130,6 +130,9 @@ export default function DollhouseCamera({
   // straight into the config.
   const poseDirty = useRef(false);
   const logPose = useCallback(() => {
+    // Authoring aid only — opt-in via ?debug=true like the rest of the logs.
+    if (typeof window === "undefined" ||
+        new URLSearchParams(window.location.search).get("debug") !== "true") return;
     const r = (v: number) => Math.round(v * 10000) / 10000;
     const e = new THREE.Euler().setFromQuaternion(camera.quaternion, "YXZ");
     const p = camera.position;

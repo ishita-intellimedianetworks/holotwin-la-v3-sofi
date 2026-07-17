@@ -349,10 +349,20 @@
             "crowd": "high",
             "crowdNote": "Heavy flow — expect queues. The Level 3 gates are clearer.",
             "camera": {
-              "position": [13.021, 3.698, 185],
-              "rotation": [0.1396, 0, 0]
+              "position": [
+                13.021,
+                3.698,
+                185
+              ],
+              "rotation": [
+                0.1396,
+                0,
+                0
+              ]
             },
-            "tags": ["Main"]
+            "tags": [
+              "Main"
+            ]
           },
           {
             "id": "mem-lay-gates-l2",
@@ -361,16 +371,90 @@
             "crowd": "med",
             "crowdNote": "Steady flow — short queues.",
             "hotspots": [
-              { "position": [57.847, 4.149, -116.046], "rotation": [0, -0.7854, 0] },
-              { "position": [83.011, 4.149, -67.925], "rotation": [0, -1.5708, 0] },
-              { "position": [84.618, 4.149, -53.727], "rotation": [0, -1.5708, 0] },
-              { "position": [86.334, 4.149, -27.242], "rotation": [0, -1.5708, 0] },
-              { "position": [86.334, 4.149, -3.273], "rotation": [0, -1.5708, 0] },
-              { "position": [84.679, 4.149, 23.207], "rotation": [0, -1.5708, 0] }
+              {
+                "position": [
+                  57.847,
+                  4.149,
+                  -116.046
+                ],
+                "rotation": [
+                  0,
+                  -0.7854,
+                  0
+                ]
+              },
+              {
+                "position": [
+                  83.011,
+                  4.149,
+                  -67.925
+                ],
+                "rotation": [
+                  0,
+                  -1.5708,
+                  0
+                ]
+              },
+              {
+                "position": [
+                  84.618,
+                  4.149,
+                  -53.727
+                ],
+                "rotation": [
+                  0,
+                  -1.5708,
+                  0
+                ]
+              },
+              {
+                "position": [
+                  86.334,
+                  4.149,
+                  -27.242
+                ],
+                "rotation": [
+                  0,
+                  -1.5708,
+                  0
+                ]
+              },
+              {
+                "position": [
+                  86.334,
+                  4.149,
+                  -3.273
+                ],
+                "rotation": [
+                  0,
+                  -1.5708,
+                  0
+                ]
+              },
+              {
+                "position": [
+                  84.679,
+                  4.149,
+                  23.207
+                ],
+                "rotation": [
+                  0,
+                  -1.5708,
+                  0
+                ]
+              }
             ],
             "camera": {
-              "position": [58.246, 4.332, -116.325],
-              "rotation": [-0.0401, -0.7255, 0]
+              "position": [
+                58.246,
+                4.332,
+                -116.325
+              ],
+              "rotation": [
+                -0.0401,
+                -0.7255,
+                0
+              ]
             }
           },
           {
@@ -380,13 +464,54 @@
             "crowd": "low",
             "crowdNote": "Low flow — fastest way in right now.",
             "hotspots": [
-              { "position": [-62.991, 13.652, 83.082], "rotation": [3.1416, 0.8727, -3.1416] },
-              { "position": [-73.166, 13.445, 61.999], "rotation": [-3.1416, 1.1345, 3.1416] },
-              { "position": [-69.17, 17.417, 13.369], "rotation": [3.1416, 1.4835, -3.1416] }
+              {
+                "position": [
+                  -62.991,
+                  13.652,
+                  83.082
+                ],
+                "rotation": [
+                  3.1416,
+                  0.8727,
+                  -3.1416
+                ]
+              },
+              {
+                "position": [
+                  -73.166,
+                  13.445,
+                  61.999
+                ],
+                "rotation": [
+                  -3.1416,
+                  1.1345,
+                  3.1416
+                ]
+              },
+              {
+                "position": [
+                  -69.17,
+                  17.417,
+                  13.369
+                ],
+                "rotation": [
+                  3.1416,
+                  1.4835,
+                  -3.1416
+                ]
+              }
             ],
             "camera": {
-              "position": [-72.569, 13.649, 61.725],
-              "rotation": [-0.0544, 1.9274, 0]
+              "position": [
+                -72.569,
+                13.649,
+                61.725
+              ],
+              "rotation": [
+                -0.0544,
+                1.9274,
+                0
+              ]
             }
           },
           {
@@ -396,14 +521,66 @@
             "crowd": "low",
             "crowdNote": "Low flow — clear.",
             "hotspots": [
-              { "position": [-63.012, 13.652, -112.844], "rotation": [0, 0.9599, 0] },
-              { "position": [-46.109, 13.042, -132], "rotation": [0, 0.6981, 0] },
-              { "position": [22.519, 13.652, -152.116], "rotation": [0, -0.1745, 0] },
-              { "position": [71.632, 13.652, -131.91], "rotation": [0, -0.7854, 0] }
+              {
+                "position": [
+                  -63.012,
+                  13.652,
+                  -112.844
+                ],
+                "rotation": [
+                  0,
+                  0.9599,
+                  0
+                ]
+              },
+              {
+                "position": [
+                  -46.109,
+                  13.042,
+                  -132
+                ],
+                "rotation": [
+                  0,
+                  0.6981,
+                  0
+                ]
+              },
+              {
+                "position": [
+                  22.519,
+                  13.652,
+                  -152.116
+                ],
+                "rotation": [
+                  0,
+                  -0.1745,
+                  0
+                ]
+              },
+              {
+                "position": [
+                  71.632,
+                  13.652,
+                  -131.91
+                ],
+                "rotation": [
+                  0,
+                  -0.7854,
+                  0
+                ]
+              }
             ],
             "camera": {
-              "position": [-45.517, 13.668, -131.373],
-              "rotation": [-0.0038, 0.7406, 0]
+              "position": [
+                -45.517,
+                13.668,
+                -131.373
+              ],
+              "rotation": [
+                -0.0038,
+                0.7406,
+                0
+              ]
             }
           },
           {
@@ -411,11 +588,30 @@
             "label": "Restrooms — Concourse",
             "option": "Restrooms",
             "hotspots": [
-              { "position": [71.312, 4.149, 71.818], "rotation": [-3.1416, -1.0472, -3.1416] }
+              {
+                "position": [
+                  71.312,
+                  4.149,
+                  71.818
+                ],
+                "rotation": [
+                  -3.1416,
+                  -1.0472,
+                  -3.1416
+                ]
+              }
             ],
             "camera": {
-              "position": [70.384, 4.286, 71.249],
-              "rotation": [0.0524, -2.1642, 0]
+              "position": [
+                70.384,
+                4.286,
+                71.249
+              ],
+              "rotation": [
+                0.0524,
+                -2.1642,
+                0
+              ]
             }
           },
           {
@@ -424,12 +620,34 @@
             "option": "Parking",
             "note": "Multi-level structure · near the Main Entrance",
             "hotspots": [
-              { "position": [102.979, 3.185, 325.052], "label": "Blue Structure" },
-              { "position": [-100.564, 3.185, -257.893], "label": "Orange Structure" }
+              {
+                "position": [
+                  102.979,
+                  3.185,
+                  325.052
+                ],
+                "label": "Blue Structure"
+              },
+              {
+                "position": [
+                  -100.564,
+                  3.185,
+                  -257.893
+                ],
+                "label": "Orange Structure"
+              }
             ],
             "camera": {
-              "position": [50.913, 3.698, 220.127],
-              "rotation": [0, -2.2243, 0]
+              "position": [
+                50.913,
+                3.698,
+                220.127
+              ],
+              "rotation": [
+                0,
+                -2.2243,
+                0
+              ]
             }
           },
           {
@@ -438,14 +656,50 @@
             "option": "Parking",
             "note": "Surface zone · general + ADA parking",
             "hotspots": [
-              { "position": [-272.506, 3.185, -3.188], "label": "Yellow Lot" },
-              { "position": [-272.506, 3.185, 258.353], "label": "Green Lot" },
-              { "position": [-184.034, 3.185, -3.188], "label": "Pink Lot" },
-              { "position": [-188.06, 3.185, 161.896], "label": "Gold Lot" }
+              {
+                "position": [
+                  -272.506,
+                  3.185,
+                  -3.188
+                ],
+                "label": "Yellow Lot"
+              },
+              {
+                "position": [
+                  -272.506,
+                  3.185,
+                  258.353
+                ],
+                "label": "Green Lot"
+              },
+              {
+                "position": [
+                  -184.034,
+                  3.185,
+                  -3.188
+                ],
+                "label": "Pink Lot"
+              },
+              {
+                "position": [
+                  -188.06,
+                  3.185,
+                  161.896
+                ],
+                "label": "Gold Lot"
+              }
             ],
             "camera": {
-              "position": [-216.149, 3.698, 60.463],
-              "rotation": [0, -0.2376, 0]
+              "position": [
+                -216.149,
+                3.698,
+                60.463
+              ],
+              "rotation": [
+                0,
+                -0.2376,
+                0
+              ]
             }
           },
           {
@@ -453,8 +707,16 @@
             "label": "Bus Stand",
             "option": "Transit",
             "camera": {
-              "position": [-142.387, 3.398, 111.778],
-              "rotation": [0.0353, 0.852, 0]
+              "position": [
+                -142.387,
+                3.398,
+                111.778
+              ],
+              "rotation": [
+                0.0353,
+                0.852,
+                0
+              ]
             }
           },
           {
@@ -464,8 +726,16 @@
             "teleportOnly": true,
             "showHsIn3d": true,
             "camera": {
-              "position": [-79.849, 25.434, -21.574],
-              "rotation": [0.3126, 2.8658, 0]
+              "position": [
+                -79.849,
+                25.434,
+                -21.574
+              ],
+              "rotation": [
+                0.3126,
+                2.8658,
+                0
+              ]
             }
           }
         ],
@@ -475,8 +745,16 @@
             "label": "Seat View — Level 1",
             "option": "Level 1",
             "camera": {
-              "position": [51.427, -6.638, -30.508],
-              "rotation": [-0.0129, 1.6084, 0]
+              "position": [
+                51.427,
+                -6.638,
+                -30.508
+              ],
+              "rotation": [
+                -0.0129,
+                1.6084,
+                0
+              ]
             },
             "exactPose": true
           },
@@ -485,8 +763,16 @@
             "label": "Seat View — Level 2",
             "option": "Level 2",
             "camera": {
-              "position": [13.111, 4.281, -131.569],
-              "rotation": [-0.1281, -3.1416, 0]
+              "position": [
+                13.111,
+                4.281,
+                -131.569
+              ],
+              "rotation": [
+                -0.1281,
+                -3.1416,
+                0
+              ]
             },
             "exactPose": true
           },
@@ -496,8 +782,16 @@
             "option": "Level 3",
             "teleportOnly": true,
             "camera": {
-              "position": [-71.457, 20.284, -30.708],
-              "rotation": [-0.2967, -1.5708, 0]
+              "position": [
+                -71.457,
+                20.284,
+                -30.708
+              ],
+              "rotation": [
+                -0.2967,
+                -1.5708,
+                0
+              ]
             },
             "exactPose": true
           }
@@ -509,8 +803,16 @@
             "option": "Elevators",
             "note": "Serves Levels 1–3 · step-free",
             "camera": {
-              "position": [-114.38, 3.998, 57.09],
-              "rotation": [0.103, -0.2566, 0]
+              "position": [
+                -114.38,
+                3.998,
+                57.09
+              ],
+              "rotation": [
+                0.103,
+                -0.2566,
+                0
+              ]
             }
           },
           {
@@ -519,8 +821,16 @@
             "option": "Elevators",
             "note": "Step-free · west concourse",
             "camera": {
-              "position": [-118.796, 3.998, 1.274],
-              "rotation": [0.0611, -0.4049, 0]
+              "position": [
+                -118.796,
+                3.998,
+                1.274
+              ],
+              "rotation": [
+                0.0611,
+                -0.4049,
+                0
+              ]
             }
           },
           {
@@ -530,8 +840,16 @@
             "note": "Step-free from the Main Entrance to the bowl",
             "teleportOnly": true,
             "camera": {
-              "position": [-50.531, 4.281, 63.675],
-              "rotation": [-0.1107, -0.665, 0]
+              "position": [
+                -50.531,
+                4.281,
+                63.675
+              ],
+              "rotation": [
+                -0.1107,
+                -0.665,
+                0
+              ]
             }
           }
         ],
@@ -541,45 +859,65 @@
             "label": "Athletics — Morning Session",
             "option": "Today's Events",
             "note": "Track & field heats · gates open 07:30.",
-            "tags": ["09:00"]
+            "tags": [
+              "09:00"
+            ]
           },
           {
             "id": "mem-evt-today-athletics-pm",
             "label": "Athletics — Evening Session",
             "option": "Today's Events",
             "note": "Finals · 100m, long jump, 4×400m relay.",
-            "tags": ["18:00"]
+            "tags": [
+              "18:00"
+            ]
           },
           {
             "id": "mem-evt-today-medals",
             "label": "Medal Ceremony",
             "option": "Today's Events",
             "note": "Victory ceremonies at the peristyle end.",
-            "tags": ["20:30"]
+            "tags": [
+              "20:30"
+            ]
           },
           {
             "id": "mem-evt-closure-gates-l3",
             "label": "Level 3 Gates",
             "option": "Closures",
             "note": "Closed 14:00–16:00 for maintenance — use the Level 2 gates instead.",
-            "tags": ["Until 16:00"]
+            "tags": [
+              "Until 16:00"
+            ]
           },
           {
             "id": "mem-evt-security-main",
             "label": "Security Checkpoint — Main Entrance",
             "option": "Security Checkpoints",
             "note": "Bag check in effect — allow 10 extra minutes.",
-            "tags": ["Active"]
+            "tags": [
+              "Active"
+            ]
           },
           {
             "id": "mem-evt-schedule",
             "label": "Ceremony moved to 18:30",
             "option": "Schedule Changes",
             "note": "Gates open 16:30 · previously 18:00.",
-            "tags": ["Updated"],
+            "tags": [
+              "Updated"
+            ],
             "camera": {
-              "position": [13.111, 4.281, -131.569],
-              "rotation": [-0.1281, -3.1416, 0]
+              "position": [
+                13.111,
+                4.281,
+                -131.569
+              ],
+              "rotation": [
+                -0.1281,
+                -3.1416,
+                0
+              ]
             }
           }
         ],
@@ -589,11 +927,30 @@
             "label": "Medical Station",
             "option": "Medical",
             "hotspots": [
-              { "position": [75.168, 4.011, 118.482], "rotation": [0, -1.1018, 0] }
+              {
+                "position": [
+                  75.168,
+                  4.011,
+                  118.482
+                ],
+                "rotation": [
+                  0,
+                  -1.1018,
+                  0
+                ]
+              }
             ],
             "camera": {
-              "position": [61.332, 4.303, 125.771],
-              "rotation": [0.0725, -1.1181, 0]
+              "position": [
+                61.332,
+                4.303,
+                125.771
+              ],
+              "rotation": [
+                0.0725,
+                -1.1181,
+                0
+              ]
             }
           },
           {
@@ -602,11 +959,22 @@
             "option": "Lost & Found & Info Desk",
             "showHsIn3d": true,
             "note": "Report or collect lost items · venue information",
-            "tags": ["Guest Services", "Open through every session"],
+            "tags": [
+              "Guest Services",
+              "Open through every session"
+            ],
             "hotspots": [
               {
-                "position": [-48.682, 3.986, 116.436],
-                "rotation": [0, 1.1018, 0],
+                "position": [
+                  -48.682,
+                  3.986,
+                  116.436
+                ],
+                "rotation": [
+                  0,
+                  1.1018,
+                  0
+                ],
                 "label": "Lost & Found",
                 "note": "Lost something during the event? Stop by — every item turned in is logged and held securely by Guest Services until it's claimed.",
                 "points": [
@@ -616,8 +984,16 @@
                 ]
               },
               {
-                "position": [-50.804, 3.986, 120.624],
-                "rotation": [0, 1.1018, 0],
+                "position": [
+                  -50.804,
+                  3.986,
+                  120.624
+                ],
+                "rotation": [
+                  0,
+                  1.1018,
+                  0
+                ],
                 "label": "Information Desk",
                 "note": "Your first stop for event-day help — the Guest Services team is here through every session.",
                 "points": [
@@ -629,8 +1005,16 @@
               }
             ],
             "camera": {
-              "position": [-30.199, 4.336, 128.526],
-              "rotation": [0, 1.0649, 0]
+              "position": [
+                -30.199,
+                4.336,
+                128.526
+              ],
+              "rotation": [
+                0,
+                1.0649,
+                0
+              ]
             }
           }
         ],
@@ -642,13 +1026,34 @@
             "teleportOnly": true,
             "showHsIn3d": true,
             "note": "Coverage: upper concourse + bowl",
-            "tags": ["Online"],
+            "tags": [
+              "Online"
+            ],
             "hotspots": [
-              { "position": [-80.875, 28.91, -13.245], "rotation": [1.5708, 0, 0] }
+              {
+                "position": [
+                  -80.875,
+                  28.91,
+                  -13.245
+                ],
+                "rotation": [
+                  1.5708,
+                  0,
+                  0
+                ]
+              }
             ],
             "camera": {
-              "position": [-79.849, 25.434, -21.574],
-              "rotation": [0.3126, 2.8658, 0]
+              "position": [
+                -79.849,
+                25.434,
+                -21.574
+              ],
+              "rotation": [
+                0.3126,
+                2.8658,
+                0
+              ]
             }
           },
           {
@@ -658,13 +1063,34 @@
             "teleportOnly": true,
             "showHsIn3d": true,
             "note": "Public SSID: LA28-Guest",
-            "tags": ["Online"],
+            "tags": [
+              "Online"
+            ],
             "hotspots": [
-              { "position": [-81.245, 28.889, -13.137], "rotation": [1.5708, 0, 0] }
+              {
+                "position": [
+                  -81.245,
+                  28.889,
+                  -13.137
+                ],
+                "rotation": [
+                  1.5708,
+                  0,
+                  0
+                ]
+              }
             ],
             "camera": {
-              "position": [-79.849, 25.434, -21.574],
-              "rotation": [0.3126, 2.8658, 0]
+              "position": [
+                -79.849,
+                25.434,
+                -21.574
+              ],
+              "rotation": [
+                0.3126,
+                2.8658,
+                0
+              ]
             }
           }
         ],
@@ -675,11 +1101,30 @@
             "option": "Emergency Exits",
             "note": "Evacuation route: concourse → Level 2 gates → assembly point on the lawn.",
             "hotspots": [
-              { "position": [57.847, 4.149, -116.046], "rotation": [0, -0.7854, 0] }
+              {
+                "position": [
+                  57.847,
+                  4.149,
+                  -116.046
+                ],
+                "rotation": [
+                  0,
+                  -0.7854,
+                  0
+                ]
+              }
             ],
             "camera": {
-              "position": [58.246, 4.332, -116.325],
-              "rotation": [-0.0401, -0.7255, 0]
+              "position": [
+                58.246,
+                4.332,
+                -116.325
+              ],
+              "rotation": [
+                -0.0401,
+                -0.7255,
+                0
+              ]
             }
           }
         ]
@@ -688,8 +1133,8 @@
     {
       "key": "stadium",
       "label": "2028 Stadium",
-      "url": "/models/stadium/sofi-stadium-v3-web.glb",
-      "navmeshUrl": "/models/navmesh/sofi-stadium-navmesh-v2.glb",
+      "url": "/models/stadium/sofi.glb",
+      "navmeshUrl": "/models/navmesh/sofi-stadium-navmesh-v4.glb",
       "floorplanUrl": "/floorplan/plan-stadium.png",
       "hsSize": 0.05,
       "mapListMode": true,
@@ -697,8 +1142,8 @@
       "shadows": false,
       "dollHouseCamera": {
         "position": [
-          534.6,
-          331.1,
+          534.597,
+          338.7194,
           486.4
         ],
         "rotation": [
@@ -708,8 +1153,8 @@
         ]
       },
       "startPosition": [
-        -204.846,
-        39.906,
+        -204.849,
+        47.5254,
         7.0227
       ],
       "startRotation": [
@@ -737,8 +1182,8 @@
             "crowdNote": "Heavy flow — expect queues. Gate 2 is clearer.",
             "camera": {
               "position": [
-                -204.846,
-                41.6057,
+                -204.849,
+                49.2251,
                 7.0227
               ],
               "rotation": [
@@ -756,8 +1201,8 @@
             "crowdNote": "Low flow — fastest way in right now.",
             "camera": {
               "position": [
-                -131.0947,
-                41.5905,
+                -131.0977,
+                49.2098,
                 106.5969
               ],
               "rotation": [
@@ -775,8 +1220,8 @@
             "crowdNote": "Steady flow — short queues.",
             "camera": {
               "position": [
-                140.0709,
-                41.7194,
+                140.0679,
+                49.3388,
                 -67.9902
               ],
               "rotation": [
@@ -792,8 +1237,8 @@
             "option": "Exit Gates — Level 1",
             "camera": {
               "position": [
-                78.797,
-                10.8681,
+                78.794,
+                18.4874,
                 27.3691
               ],
               "rotation": [
@@ -809,12 +1254,12 @@
             "option": "Exit Gates — Level 1",
             "camera": {
               "position": [
-                0.0629,
-                8.8606,
+                0.0599,
+                16.48,
                 -52.2449
               ],
               "rotation": [
-                -0.3368,
+                -0.2618,
                 0,
                 0
               ]
@@ -826,12 +1271,12 @@
             "option": "Exit Gates — Level 1",
             "camera": {
               "position": [
-                0.0629,
-                8.8984,
+                0.0599,
+                16.5178,
                 52.2396
               ],
               "rotation": [
-                -0.3368,
+                -0.2618,
                 -3.1416,
                 0
               ]
@@ -843,13 +1288,13 @@
             "option": "Exit Gates — Level 1",
             "camera": {
               "position": [
-                -82.915,
-                10.8728,
+                -82.918,
+                18.4922,
                 -14.3983
               ],
               "rotation": [
-                0.2144,
-                1.3947,
+                0.0625,
+                1.4401,
                 0
               ]
             }
@@ -860,8 +1305,8 @@
             "option": "Exit Gates — Level 7",
             "camera": {
               "position": [
-                -93.647,
-                54.5569,
+                -93.6501,
+                62.1763,
                 63.5641
               ],
               "rotation": [
@@ -877,9 +1322,9 @@
             "option": "Exit Gates — Level 7",
             "camera": {
               "position": [
-                96.4874,
-                54.4753,
-                63.3116
+                96.4844,
+                62.0947,
+                63.3115
               ],
               "rotation": [
                 -0.4974,
@@ -894,8 +1339,8 @@
             "option": "Exit Gates — Level 7",
             "camera": {
               "position": [
-                -93.5619,
-                54.5569,
+                -93.5649,
+                62.1763,
                 -63.2017
               ],
               "rotation": [
@@ -911,9 +1356,9 @@
             "option": "Exit Gates — Level 7",
             "camera": {
               "position": [
-                96.3495,
-                54.4753,
-                -63.242
+                96.3465,
+                62.0947,
+                -63.2421
               ],
               "rotation": [
                 -0.4974,
@@ -928,13 +1373,30 @@
             "option": "Restrooms",
             "camera": {
               "position": [
-                -34.0659,
-                50.5186,
-                -113.2849
+                -34.0689,
+                58.138,
+                -113.285
               ],
               "rotation": [
                 0,
                 -3.1032,
+                0
+              ]
+            }
+          },
+          {
+            "id": "sta-lay-pool",
+            "label": "Aquatics Pool",
+            "option": "Pool",
+            "camera": {
+              "position": [
+                -27.3152,
+                9.1314,
+                15.421
+              ],
+              "rotation": [
+                -0.089,
+                -0.74,
                 0
               ]
             }
@@ -948,8 +1410,8 @@
             "exactPose": true,
             "camera": {
               "position": [
-                -67.5527,
-                4.4612,
+                -67.5557,
+                12.0806,
                 -3.7191
               ],
               "rotation": [
@@ -966,8 +1428,8 @@
             "exactPose": true,
             "camera": {
               "position": [
-                4.0932,
-                4.1567,
+                4.0902,
+                11.7761,
                 41.1296
               ],
               "rotation": [
@@ -984,9 +1446,9 @@
             "exactPose": true,
             "camera": {
               "position": [
-                0.0629,
-                16.1924,
-                -59.0384
+                0.0599,
+                23.8118,
+                -59.0385
               ],
               "rotation": [
                 -0.2967,
@@ -1002,8 +1464,8 @@
             "exactPose": true,
             "camera": {
               "position": [
-                85.1949,
-                16.195,
+                85.1918,
+                23.8144,
                 -3.7191
               ],
               "rotation": [
@@ -1020,8 +1482,8 @@
             "exactPose": true,
             "camera": {
               "position": [
-                -50.2455,
-                29.5253,
+                -50.2485,
+                37.1447,
                 66.2233
               ],
               "rotation": [
@@ -1038,8 +1500,8 @@
             "exactPose": true,
             "camera": {
               "position": [
-                78.0626,
-                33.3064,
+                78.0595,
+                40.9258,
                 -56.9771
               ],
               "rotation": [
@@ -1056,8 +1518,8 @@
             "exactPose": true,
             "camera": {
               "position": [
-                -90.5025,
-                31.5454,
+                -90.5055,
+                39.1648,
                 -3.7191
               ],
               "rotation": [
@@ -1074,8 +1536,8 @@
             "exactPose": true,
             "camera": {
               "position": [
-                106.9898,
-                38.4023,
+                106.9868,
+                46.0217,
                 -3.7191
               ],
               "rotation": [
@@ -1092,8 +1554,8 @@
             "exactPose": true,
             "camera": {
               "position": [
-                -2.0151,
-                48.1708,
+                -2.0181,
+                55.7901,
                 -86.3948
               ],
               "rotation": [
@@ -1110,8 +1572,8 @@
             "exactPose": true,
             "camera": {
               "position": [
-                -101.0264,
-                47.2792,
+                -101.0294,
+                54.8985,
                 37.2312
               ],
               "rotation": [
@@ -1128,9 +1590,9 @@
             "exactPose": true,
             "camera": {
               "position": [
-                -48.4065,
-                53.3327,
-                86.9935
+                -48.4095,
+                60.9521,
+                86.9934
               ],
               "rotation": [
                 -0.4538,
@@ -1146,8 +1608,8 @@
             "exactPose": true,
             "camera": {
               "position": [
-                100.3672,
-                67.1106,
+                100.3642,
+                74.73,
                 -88.19
               ],
               "rotation": [
@@ -1164,81 +1626,15 @@
             "label": "Exit Gate 1 — Level 1",
             "option": "Emergency Exits",
             "note": "Evacuation route: concourse → Level 1 exit gate 1 → assembly area outside.",
-            "tags": [
-              "Egress"
-            ],
             "camera": {
               "position": [
-                78.797,
-                10.8681,
+                78.794,
+                18.4874,
                 27.3691
               ],
               "rotation": [
                 0.2094,
                 -2.0508,
-                0
-              ]
-            }
-          },
-          {
-            "id": "sta-exit-2",
-            "label": "Exit Gate 2 — Level 1",
-            "option": "Emergency Exits",
-            "note": "Evacuation route: concourse → Level 1 exit gate 2 → assembly area outside.",
-            "tags": [
-              "Egress"
-            ],
-            "camera": {
-              "position": [
-                0.0629,
-                8.8606,
-                -52.2449
-              ],
-              "rotation": [
-                -0.3368,
-                0,
-                0
-              ]
-            }
-          },
-          {
-            "id": "sta-exit-3",
-            "label": "Exit Gate 3 — Level 1",
-            "option": "Emergency Exits",
-            "note": "Evacuation route: concourse → Level 1 exit gate 3 → assembly area outside.",
-            "tags": [
-              "Egress"
-            ],
-            "camera": {
-              "position": [
-                0.0629,
-                8.8984,
-                52.2396
-              ],
-              "rotation": [
-                -0.3368,
-                -3.1416,
-                0
-              ]
-            }
-          },
-          {
-            "id": "sta-exit-4",
-            "label": "Exit Gate 4 — Level 1",
-            "option": "Emergency Exits",
-            "note": "Evacuation route: concourse → Level 1 exit gate 4 → assembly area outside.",
-            "tags": [
-              "Egress"
-            ],
-            "camera": {
-              "position": [
-                -82.915,
-                10.8728,
-                -14.3983
-              ],
-              "rotation": [
-                0.2144,
-                1.3947,
                 0
               ]
             }
@@ -1330,8 +1726,8 @@
             "hotspots": [
               {
                 "position": [
-                  -123.9693,
-                  49.54,
+                  -123.9723,
+                  57.1594,
                   5.2015
                 ],
                 "rotation": [
@@ -1350,9 +1746,9 @@
             ],
             "camera": {
               "position": [
-                -134.4356,
-                50.4855,
-                8.0172
+                -134.4387,
+                58.1048,
+                8.0171
               ],
               "rotation": [
                 -0.0524,
@@ -1369,8 +1765,8 @@
             "hotspots": [
               {
                 "position": [
-                  -114.7394,
-                  49.5319,
+                  -114.7424,
+                  57.1513,
                   41.8805
                 ],
                 "rotation": [
@@ -1388,8 +1784,8 @@
             ],
             "camera": {
               "position": [
-                -125.7534,
-                50.4855,
+                -125.7564,
+                58.1048,
                 47.401
               ],
               "rotation": [
@@ -1407,8 +1803,8 @@
             "hotspots": [
               {
                 "position": [
-                  -101.738,
-                  50.4164,
+                  -101.741,
+                  58.0358,
                   81.8096
                 ],
                 "rotation": [
@@ -1426,8 +1822,8 @@
             ],
             "camera": {
               "position": [
-                -108.9432,
-                50.564,
+                -108.9462,
+                58.1834,
                 89.4935
               ],
               "rotation": [
@@ -1445,8 +1841,8 @@
             "hotspots": [
               {
                 "position": [
-                  -101.7615,
-                  50.4262,
+                  -101.7645,
+                  58.0456,
                   -81.789
                 ],
                 "rotation": [
@@ -1464,12 +1860,12 @@
             ],
             "camera": {
               "position": [
-                -107.6128,
-                50.415,
+                -107.6158,
+                58.0344,
                 -88.6136
               ],
               "rotation": [
-                0.0314,
+                0,
                 -2.4574,
                 0
               ]
@@ -1486,8 +1882,8 @@
             "hotspots": [
               {
                 "position": [
-                  56.0071,
-                  30.6746,
+                  56.0041,
+                  38.294,
                   68.4331
                 ],
                 "rotation": [
@@ -1501,8 +1897,8 @@
             "option": "Cameras",
             "camera": {
               "position": [
-                52.5508,
-                29.4709,
+                52.5478,
+                37.0903,
                 66.8654
               ],
               "rotation": [
@@ -1522,8 +1918,8 @@
             "hotspots": [
               {
                 "position": [
-                  -2.4441,
-                  30.6809,
+                  -2.4471,
+                  38.3003,
                   75.5789
                 ],
                 "rotation": [
@@ -1536,8 +1932,8 @@
             ],
             "camera": {
               "position": [
-                0.1542,
-                29.4656,
+                0.1512,
+                37.085,
                 72.762
               ],
               "rotation": [

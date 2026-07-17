@@ -14,6 +14,10 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import * as THREE from "three";
 import type { FloorTransition } from "@/components-v5/shared/types";
 
+// Same opt-in as the rest of the scene debug logging (?debug=true).
+const DEBUG = typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).get("debug") === "true";
+
 interface PortalRaycastOptions {
   gl: { domElement: HTMLElement };
   camera: THREE.Camera;
@@ -54,7 +58,7 @@ export function usePortalRaycast({
       );
       raycaster.setFromCamera(mouse, camera);
       const hits = raycaster.intersectObjects(scene.children, true);
-      if (!hits.length) { console.log("[portal] click → no scene hits"); return; }
+      if (!hits.length) { if (DEBUG) console.log("[portal] click → no scene hits"); return; }
 
       const byName = new Map(ts.map((t) => [t.meshName, t]));
       for (const h of hits) {
@@ -62,14 +66,14 @@ export function usePortalRaycast({
         while (o) {
           const t = byName.get(o.name);
           if (t) {
-            console.log(`[portal] ✅ hit "${o.name}" → entering "${t.targetFloorId}"`);
+            if (DEBUG) console.log(`[portal] ✅ hit "${o.name}" → entering "${t.targetFloorId}"`);
             onEnterRef.current(t);
             return;
           }
           o = o.parent;
         }
       }
-      console.log(
+      if (DEBUG) console.log(
         `[portal] hit "${hits[0].object.name || "(unnamed)"}" — no portal match. ` +
         `Looking for: ${[...byName.keys()].join(", ")}`,
       );

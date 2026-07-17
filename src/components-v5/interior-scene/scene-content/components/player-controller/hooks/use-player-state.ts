@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import * as THREE from "three";
 import type { PlayerState } from "../types/types";
+import { navConfig } from "../../../../nav-config";
 
 interface UsePlayerStateOptions {
   startPosition: [number, number, number];
@@ -38,7 +39,7 @@ export function usePlayerState({
   const moving        = useRef(false);
   const vizGrp        = useRef<THREE.Group>(null);
   const onNavComplete = useRef<(() => void) | null>(null);
-  const speedMult     = useRef(1);
+  const speedMult     = useRef(navConfig.logic.defaultSpeedMult);
 
   // ── Idle camera drift ─────────────────────────────────────────────────────
   const idleOn      = useRef(false);

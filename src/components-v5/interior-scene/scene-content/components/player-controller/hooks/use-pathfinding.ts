@@ -296,10 +296,6 @@ export function usePathfinding({
             const end = reClean[reClean.length - 1];
             if (Math.hypot(end.x - fromPt.x, end.z - fromPt.z) < 1.0) continue;
             clean = reClean;
-            console.log(
-              `[PlayerController] ↪ re-aimed ${Math.round(f * 100)}% toward target → same-level point` +
-              ` (${re.x.toFixed(2)}, ${re.y.toFixed(2)}, ${re.z.toFixed(2)})`,
-            );
             break;
           }
         }
@@ -353,17 +349,11 @@ export function usePathfinding({
         state.lookAtTween.current?.kill();
         state.lookAtTween.current = null;
         state.idleOn.current = false; // cancel intro drift when navigation starts
-        // Each new walk starts at the default pace (1×); the speed UI re-applies
-        // 2×/3×/5× on tap. Reset here (not on the UI's mount) so a flickering dock
+        // Each new walk starts at the default pace (5×); the speed UI re-applies
+        // 3×/1× on tap. Reset here (not on the UI's mount) so a flickering dock
         // can't keep snapping the multiplier back mid-walk.
         state.speedMult.current = navConfig.logic.defaultSpeedMult;
         setMoving(true);
-
-        if (debug) {
-          console.log(
-            `[PlayerController] 🚶 ${result.length} waypoints in "${zone}"`,
-          );
-        }
 
         state.vizGrp.current?.clear();
         if (state.vizGrp.current && debug) {

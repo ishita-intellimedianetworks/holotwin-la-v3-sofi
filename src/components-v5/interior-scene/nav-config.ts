@@ -67,8 +67,8 @@ export const navConfig = {
      *  6 km/h = 6000 / 3600 ≈ 1.667 m/s (average human walking speed). */
     walkMps: 6000 / 3600,
     /** Walk-speed multiplier the speed UI defaults to / each walk starts at.
-     *  The speed control offers 1× / 2× / 3× / 5×, starting on 1×. */
-    defaultSpeedMult: 1,
+     *  The speed control offers 5× / 3× / 1×, starting on 5×. */
+    defaultSpeedMult: 5,
 
     // ── Fixed model fact (not a tuning knob) ──
     /** The model's longest extent in WORLD UNITS, measured from its bounding

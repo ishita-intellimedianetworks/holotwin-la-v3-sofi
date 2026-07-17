@@ -109,10 +109,7 @@ export function useDoubleClickNav({
     };
 
     const onDblClick = (e: MouseEvent) => {
-      if (drag || !navReady) {
-        console.log(`[DblClick] ignored — ${drag ? "pointer dragged" : "nav not ready"}`);
-        return;
-      }
+      if (drag || !navReady) return;
 
       // Convert screen coords → Normalized Device Coordinates (NDC)
       const rect  = dom.getBoundingClientRect();
@@ -123,19 +120,11 @@ export function useDoubleClickNav({
       raycaster.setFromCamera(mouse, camera);
 
       const hits = raycaster.intersectObjects(scene.children, true);
-      if (!hits.length) {
-        console.log("[DblClick] ignored — raycast hit nothing");
-        return;
-      }
+      if (!hits.length) return;
 
       const pt   = hits[0].point;
       const ctrl = playerControllerRef.current;
       if (!ctrl) return;
-      const pp = ctrl.getPosition();
-      console.log(
-        `[DblClick] hit "${hits[0].object.name || "(unnamed)"}" @ (${pt.x.toFixed(2)}, ${pt.y.toFixed(2)}, ${pt.z.toFixed(2)})` +
-        ` · player @ (${pp.x.toFixed(2)}, ${pp.y.toFixed(2)}, ${pp.z.toFixed(2)})`,
-      );
 
       // Cross-floor walking is gone — portals handle inter-floor moves.
       // Restrict the floor search to the player's CURRENT floor so a click
@@ -148,14 +137,7 @@ export function useDoubleClickNav({
       // skip them — their ramp routes legitimately change level.
       const guardRoutes = activeFloor?.routeSanitize !== false;
       const match = findBestFloorForPoint(pt, searchFloors, pathfinding);
-      if (!match) {
-        console.log("[DblClick] ✗ filter: no navmesh zone matched → ignored");
-        return;
-      }
-      console.log(
-        `[DblClick] zone "${match.zoneName}" · nearest walkable node ${match.distance.toFixed(2)}u away` +
-        ` @ (${match.closestPoint.x.toFixed(2)}, ${match.closestPoint.y.toFixed(2)}, ${match.closestPoint.z.toFixed(2)})`,
-      );
+      if (!match) return;
 
       // Everything below snaps/clamps ONLY onto the PLAYER'S navmesh island
       // (pathfinding group). The nearest point on a DIFFERENT island has no
@@ -170,10 +152,6 @@ export function useDoubleClickNav({
       // navmesh point instead, capped at SNAP_MAX_DIST so sky/roof clicks do
       // nothing. Either way the walk paths through the navmesh.
       const surfaceY = probeFloorY(pathfinding, match.zoneName, pt.x, pt.z, pt.y);
-      console.log(
-        `[DblClick] on-mesh probe: surfaceY=${surfaceY == null ? "null (XZ outside all triangles)" : surfaceY.toFixed(2)}` +
-        `${surfaceY != null ? ` · Δy=${Math.abs(surfaceY - pt.y).toFixed(2)} (tol ${ON_MESH_CLICK_Y_TOL})` : ""}`,
-      );
       let target: THREE.Vector3 | null = null;
       if (surfaceY != null && Math.abs(surfaceY - pt.y) <= ON_MESH_CLICK_Y_TOL) {
         target = new THREE.Vector3(pt.x, surfaceY, pt.z);
@@ -183,13 +161,8 @@ export function useDoubleClickNav({
           -Infinity, Infinity, playerGroup,
         );
         if (snap && snap.dist <= SNAP_MAX_DIST) {
-          console.log(`[DblClick] ↪ off-mesh, snapped ${snap.dist.toFixed(2)}u (max ${SNAP_MAX_DIST}) to (${snap.x.toFixed(2)}, ${snap.y.toFixed(2)}, ${snap.z.toFixed(2)})`);
           target = new THREE.Vector3(snap.x, snap.y, snap.z);
         } else {
-          console.log(
-            `[DblClick] ✗ filter: off-mesh and nearest walkable point is ${snap ? snap.dist.toFixed(2) + "u" : "not found"}` +
-            ` (max ${SNAP_MAX_DIST}) → ignored`,
-          );
           return;
         }
       }
@@ -204,16 +177,7 @@ export function useDoubleClickNav({
           pathfinding, match.zoneName, pt.x, foot.y, pt.z,
           foot.y - TARGET_MAX_DY, foot.y + TARGET_MAX_DY, playerGroup,
         );
-        if (!clamped) {
-          console.log(
-            `[DblClick] ✗ target is ${(target.y - foot.y).toFixed(2)}u above/below the player and no same-level point exists → ignored`,
-          );
-          return;
-        }
-        console.log(
-          `[DblClick] ↪ target on another level (Δy ${(target.y - foot.y).toFixed(2)}) → clamped to same-level point` +
-          ` (${clamped.x.toFixed(2)}, ${clamped.y.toFixed(2)}, ${clamped.z.toFixed(2)})`,
-        );
+        if (!clamped) return;
         target = new THREE.Vector3(clamped.x, clamped.y, clamped.z);
       }
 
@@ -246,38 +210,29 @@ export function useDoubleClickNav({
               route = findPathWeighted(pathfinding, startNode.centroid, targetNode.centroid, match.zoneName, group);
             }
           }
-          if (!route?.length) {
-            console.log("[DblClick] route validation: no path found — letting the walk decide");
-            return tgt;
-          }
+          if (!route?.length) return tgt;
           const lo = Math.min(foot.y, tgt.y) - ROUTE_Y_BAND;
           const hi = Math.max(foot.y, tgt.y) + ROUTE_Y_BAND;
           let cut = -1;
-          let why = "";
           let prev = fromPt;
           for (let i = 0; i < route.length; i++) {
             const p = route[i];
-            if (p.y < lo || p.y > hi) { cut = i; why = "leaves the level band"; break; }
+            if (p.y < lo || p.y > hi) { cut = i; break; }
             const run = Math.hypot(p.x - prev.x, p.z - prev.z);
             const rise = Math.abs(p.y - prev.y);
             // rise > 0.8 skips ordinary stair steps; NO minimum run — the
             // broken connector triangles produce near-VERTICAL segments
             // (big rise, tiny run) that a run-gated check waved through.
             if (rise > 0.8 && rise / Math.max(run, 0.001) > MAX_ROUTE_SLOPE) {
-              cut = i; why = `hits a ${(rise / Math.max(run, 0.001)).toFixed(2)} grade (max ${MAX_ROUTE_SLOPE})`; break;
+              cut = i; break;
             }
             prev = p;
           }
           if (cut === -1) return tgt;
           const last = cut > 0 ? route[cut - 1] : fromPt;
           if (Math.hypot(last.x - foot.x, last.z - foot.z) < 1.5) {
-            console.log(`[DblClick] route immediately ${why} (cuts through the bowl)`);
             return null;
           }
-          console.log(
-            `[DblClick] ↪ route ${why} after ${cut} waypoints → truncated; walking to` +
-            ` (${last.x.toFixed(2)}, ${last.y.toFixed(2)}, ${last.z.toFixed(2)})`,
-          );
           return new THREE.Vector3(last.x, last.y, last.z);
         };
 
@@ -293,9 +248,6 @@ export function useDoubleClickNav({
           );
           if (sameLevel) {
             const clamped = new THREE.Vector3(sameLevel.x, sameLevel.y, sameLevel.z);
-            console.log(
-              `[DblClick] ↪ re-aimed at same-level point (${clamped.x.toFixed(2)}, ${clamped.y.toFixed(2)}, ${clamped.z.toFixed(2)})`,
-            );
             // If even this route trips the validator, hand the clamped point
             // to the walker anyway — navigateToPoint runs its own
             // sanitizeRoute truncation, so the walk stays safe but the click
@@ -303,14 +255,10 @@ export function useDoubleClickNav({
             end = validateEnd(clamped) ?? clamped;
           }
         }
-        if (!end) {
-          console.log("[DblClick] ✗ no walkable point on the player's level toward the click → ignored");
-          return;
-        }
+        if (!end) return;
         target = end;
       } catch { /* validation is best-effort — fall through to the walk */ }
 
-      console.log(`[DblClick] ✓ walk to (${target.x.toFixed(2)}, ${target.y.toFixed(2)}, ${target.z.toFixed(2)})`);
       navigateToFloorRef.current(ctrl, target, match.zoneName);
     };
 

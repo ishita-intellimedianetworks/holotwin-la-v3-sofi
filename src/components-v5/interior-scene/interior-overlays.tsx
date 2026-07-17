@@ -24,6 +24,7 @@ import { navConfig } from "./nav-config";
 import { Sidebar } from "./ui/sidebar";
 import { EventUpdates } from "./ui/event-updates";
 import { SpeedControl } from "./ui/speed-control";
+import { FullscreenButton } from "./ui/fullscreen-button";
 import { LightsPanel } from "./ui/lights-panel";
 import type { Destination, DestinationCategory, DestinationsByCategory } from "@/components-v5/shared/types";
 import { useInteriorInline } from "./inline-context";
@@ -390,6 +391,8 @@ export default function InteriorOverlays() {
   return (
     <>
       <ForceLandscape />
+      {/* Device fullscreen toggle — self-gates to touch devices in landscape. */}
+      <FullscreenButton />
       {!inlineMode && showHud && (
         <HoloTwinHud
           progress={0}

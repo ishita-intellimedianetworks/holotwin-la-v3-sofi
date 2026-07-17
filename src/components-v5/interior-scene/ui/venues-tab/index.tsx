@@ -71,8 +71,12 @@ export function VenuesTab({ floors, activeFloorIndex, disabled, isMoving, open, 
           mirrored to the right of the flap. Kept mounted and faded (opacity
           only — animating the backdrop-blur surface janks) so it animates on
           close as well as open; absolutely placed so it never shifts the flap. */}
+      {/* `inert` (not aria-hidden): the close button inside keeps focus after
+          the closing click, and aria-hidden on a focused subtree trips the
+          browser's accessibility warning. inert both hides from AT and
+          releases/blocks focus. */}
       <div
-        aria-hidden={!open}
+        inert={!open}
         className={cn(
           "absolute top-1/2 flex w-[340px] max-w-[calc(100vw-104px)] -translate-y-1/2 flex-col overflow-hidden rounded-[14px] transition-opacity duration-[500ms] ease-out",
           // Phone (landscape): shrink the whole panel like the left overlays do,

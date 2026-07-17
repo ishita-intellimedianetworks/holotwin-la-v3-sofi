@@ -821,7 +821,7 @@ export function SceneContent({
         );
       const upto = Math.min(t.swapAtCamera ?? t.cameras.length - 1, t.cameras.length - 1);
       const cams = t.cameras.slice(0, upto + 1);
-      console.log(`[portal] enterInterior → "${t.targetFloorId}" (idx ${idx}) — ${cams.length} waypoint(s)`);
+      if (debug) console.log(`[portal] enterInterior → "${t.targetFloorId}" (idx ${idx}) — ${cams.length} waypoint(s)`);
       if (cams.length === 0) { swap(); return; }
       setCinematicActive?.(true);
 
