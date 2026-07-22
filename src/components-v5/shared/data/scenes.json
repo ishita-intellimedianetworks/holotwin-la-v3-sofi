@@ -1133,8 +1133,8 @@
     {
       "key": "stadium",
       "label": "2028 Stadium",
-      "url": "/models/stadium/sofi.glb",
-      "navmeshUrl": "/models/navmesh/sofi-stadium-navmesh-v4.glb",
+      "url": "/models/stadium/sofi-stadium-v5-web.glb",
+      "navmeshUrl": "/models/navmesh/sofi-stadium-navmesh-v5.glb",
       "floorplanUrl": "/floorplan/plan-stadium.png",
       "hsSize": 0.05,
       "mapListMode": true,
@@ -1390,13 +1390,13 @@
             "option": "Pool",
             "camera": {
               "position": [
-                -27.3152,
-                9.1314,
-                15.421
+                -29.6827,
+                9.1485,
+                17.2685
               ],
               "rotation": [
-                -0.089,
-                -0.74,
+                0.1276,
+                -0.8162,
                 0
               ]
             }
