@@ -7,12 +7,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "bake": "node scripts/holotwin-bake.cjs"
+    "bake": "node scripts/holotwin-bake.cjs",
+    "vr:check": "node scripts/vr-model-check.mjs"
   },
   "dependencies": {
+    "@preact/signals-core": "^1.14.4",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@react-three/postprocessing": "^3.0.4",
+    "@react-three/uikit": "^1.0.75",
+    "@react-three/uikit-lucide": "^1.0.75",
+    "@react-three/xr": "^6.6.30",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "glslify": "^7.1.1",

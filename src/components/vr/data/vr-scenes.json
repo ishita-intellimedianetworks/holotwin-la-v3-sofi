@@ -1,0 +1,138 @@
+{
+  "_comment": [
+    "VR TUNING, per venue. Edit this file to change how VR feels; edit",
+    "components-v5/shared/data/scenes.json to change what the site IS.",
+    "",
+    "THE SPLIT: scenes.json owns scene DATA — which GLB, which navmesh, which",
+    "POIs, which floor plan — and both the flat site and VR read it, so a model",
+    "swap or a new destination reaches both with no duplication. This file owns",
+    "everything that is a HEADSET question and has no flat equivalent, or whose",
+    "flat value is wrong in VR.",
+    "",
+    "Every value here is optional. Anything omitted falls back to the flat",
+    "value from scenes.json, or to the defaults in ./index.ts, so a venue can",
+    "be added to scenes.json and work in VR before anyone tunes it.",
+    "",
+    "ANGLES ARE DEGREES here, unlike scenes.json, which stores radians because",
+    "that is what its player feeds to a THREE.Euler. Degrees are what a person",
+    "editing a spawn actually wants to type, and the XR origin is set from",
+    "degrees anyway.",
+    "",
+    "FIRST PERSON AND DOLL HOUSE ARE SEPARATE. They are two different views of",
+    "the same building with nothing in common: one puts you on the floor at",
+    "human scale, the other puts the whole venue on a table in front of you.",
+    "A single spawn cannot describe both."
+  ],
+
+  "defaults": {
+    "//": "Applied to any venue that does not override them.",
+
+    "fov": 70,
+
+    "//fov": [
+      "PREVIEW ONLY. Inside an immersive session the headset supplies its own",
+      "projection and this is ignored entirely — it sets the flat canvas behind",
+      "the gate, which is what a desktop visitor sees. Kept per-venue because",
+      "that preview is the only picture some people will ever see of a venue."
+    ],
+
+    "//cameraHeight": [
+      "NOT added to the XR origin. A headset reports the wearer's real standing",
+      "height, so adding an authored eye height on top puts their head through",
+      "the ceiling. It is recorded because it is the honest statement of how",
+      "tall a person is in this model's units, and a value far from ~1.7 means",
+      "the model is not authored in metres — which is worth knowing before",
+      "blaming the locomotion for feeling wrong."
+    ],
+
+    "locomotion": {
+      "moveSpeed": 1.6,
+      "turnSpeed": 90,
+      "teleportSeconds": 1.5
+    },
+
+    "//locomotion": [
+      "moveSpeed is metres per second at full stick. Scale it to the venue, not",
+      "to taste: the same 1.4 that feels like a walk in a room feels like",
+      "wading across a stadium. turnSpeed (degrees/second) is a COMFORT limit",
+      "and should stay put. teleportSeconds is how long a 'travel to' glide",
+      "takes — long enough to read the journey, short enough not to be a wait."
+    ],
+
+    "dollHouse": {
+      "position": [0, 1.35, -2.6],
+      "tableSpan": 1.6,
+      "tilt": 60,
+      "spin": 0,
+      "tiltRange": [12, 90]
+    },
+
+    "//dollHouse": [
+      "position: where the table sits, in metres from the XR origin, which is at",
+      "  FLOOR level — so y is measured from the floor and wants to be near eye",
+      "  height. Negative z is in front of you.",
+      "tableSpan: how wide the model reads on that table, in metres. The model",
+      "  is scaled to fit its largest dimension into this, so one number covers",
+      "  a hotel room and a stadium.",
+      "tilt: degrees about X. 90 is a straight plan view; 60 is a three-quarter",
+      "  view that shows the venue has height.",
+      "spin: degrees about Y, for pointing a particular face at the viewer.",
+      "tiltRange: how far the thumbstick may tilt it, [min, max]."
+    ]
+  },
+
+  "venues": {
+    "village": {
+      "cameraHeight": 1.828,
+      "firstPerson": {
+        "position": [22.1736, 0, 13.0198],
+        "rotationY": 119.79
+      },
+      "locomotion": { "moveSpeed": 1.6, "teleportSeconds": 1.5 }
+    },
+
+    "hotel-room": {
+      "//hidden": [
+        "NOT LISTED IN VR. It stays in scenes.json and the flat site still",
+        "shows it — this is a VR-only decision, which is what this file is for.",
+        "",
+        "It is a single hotel room among three event venues: no POIs, no floor",
+        "plan, nothing to walk to and nothing to look up. In the flat site it",
+        "sits in a sidebar where an extra entry costs nothing; in a headset it",
+        "is a row in the Venues panel that reloads a model to show you a room."
+      ],
+      "hidden": true,
+      "cameraHeight": 1.2,
+      "firstPerson": {
+        "position": [-0.00002, 0, 2.6],
+        "rotationY": 0
+      },
+      "//": "A single room. Slow, or you cross it in two steps.",
+      "locomotion": { "moveSpeed": 1.0, "teleportSeconds": 1.0 },
+      "//dollHouse": "A four-metre room on a 1.6 m table is nearly life-size; brought in closer and tipped nearer to plan so the layout reads.",
+      "dollHouse": { "tableSpan": 1.2, "tilt": 70 }
+    },
+
+    "memorial": {
+      "cameraHeight": 1.5,
+      "//firstPerson": "y is the authored concourse height. The navmesh spans 33 m of tiers, so its lowest point is NOT this floor — see the note in experience/session.",
+      "firstPerson": {
+        "position": [13.021, 3.698, 185],
+        "rotationY": 0
+      },
+      "//": "Concourses and stands — long, mostly straight runs.",
+      "locomotion": { "moveSpeed": 2.6, "teleportSeconds": 2.0 }
+    },
+
+    "stadium": {
+      "//cameraHeight": "Not authored flat either; the default stands.",
+      "//firstPerson": "y is the Gate 1 concourse, 40 m above the pitch the navmesh bottoms out at.",
+      "firstPerson": {
+        "position": [-204.849, 47.5254, 7.0227],
+        "rotationY": -90
+      },
+      "//": "The biggest by a wide margin: ~1 km corner to corner.",
+      "locomotion": { "moveSpeed": 3.2, "teleportSeconds": 2.5 }
+    }
+  }
+}
