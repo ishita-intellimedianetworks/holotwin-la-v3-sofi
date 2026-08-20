@@ -37,19 +37,28 @@
     ],
 
     "//groundOffset": [
-      "Metres added to every navmesh height reading. NORMALLY 0, and it should",
-      "stay that way: a headset measures standing height from the XR origin",
-      "itself, so the origin belongs ON the floor and adding a person's height",
-      "here would put their eyes through the ceiling. cameraHeight below is",
-      "that other number and is not used to place anyone.",
+      "Metres added to every navmesh height reading — the one place the",
+      "player's standing height is adjusted, and the ONLY one. The spawn, a",
+      "teleport landing and every step of a walk all read the same navmesh",
+      "surface and all add this, so they cannot settle at different heights",
+      "over the same piece of floor.",
       "",
-      "This is for a navmesh baked at the WRONG DATUM — exported at eye level,",
-      "or floating a hand's width over the geometry it describes. That is a",
-      "fact about the asset which no code can infer, and it is authored here",
-      "rather than compensated for at one call site, because the spawn, a",
-      "teleport landing and every step of a walk all read the same surface and",
-      "must agree about how high it is."
+      "IT IS NOT AN EYE HEIGHT. A headset measures the wearer's own height from",
+      "the XR origin, so the origin belongs on the floor and adding a person's",
+      "full height here would put their eyes through the ceiling. cameraHeight",
+      "below is that other number and is not used to place anyone.",
+      "",
+      "0.25 as a default: a quarter of a metre lifts the view off the floor",
+      "enough to read as standing on the ground rather than in it, which is",
+      "what these navmeshes needed — they are Recast output and sit a little",
+      "under the surface they describe in places. Small enough that a headset's",
+      "own standing height still does the real work.",
+      "",
+      "Override per venue for a navmesh baked at a genuinely wrong datum —",
+      "exported at eye level, or floating over the geometry it describes. That",
+      "is a fact about the asset which no code can infer."
     ],
+    "groundOffset": 0.25,
     "//far": [
       "The camera's far plane in metres, per venue, and it reaches the HEADSET:",
       "three copies the camera's near and far onto the session as depthNear and",
@@ -63,10 +72,17 @@
       "coplanar surfaces fight and a floor read as see-through. Measured world",
       "spans, from the GLB accessors:",
       "",
-      "  village   191 x 27 x 218 m    290 m diagonal   -> 400",
-      "  memorial  813 x 58 x 981 m   1274 m diagonal   -> 1500",
-      "  stadium   656 x 97 x 578 m    873 m diagonal   -> 1200",
+      "  village   191 x 27 x 218 m    290 m diagonal   ->  320",
+      "  memorial  813 x 58 x 981 m   1274 m diagonal   -> 1300",
+      "  stadium   656 x 97 x 578 m    873 m diagonal   ->  950",
       "  hotel      4 x 2.7 x 6.2 m      7.3 m diagonal ->   60",
+      "",
+      "Each is the diagonal plus a small margin and no more. The diagonal is",
+      "the furthest anything can be from anyone standing inside the venue, so",
+      "the margin is for the model's own slack rather than for a view that",
+      "needs it. Every metre past that is precision spent on empty space, and",
+      "running out of precision is what makes two coplanar surfaces fight and",
+      "one of them vanish.",
       "",
       "Re-measure with `npm run vr:check` if a model is replaced."
     ],
@@ -119,7 +135,7 @@
     "village": {
       "//model": "Rebuilt for VR by `npm run vr:optimize`: 302 draws to 77 and 1,270k triangles to 578k. Simplified, so re-judge the ratio in a headset. The flat site keeps olympic-village-v3.glb.",
       "model": "/models/olympic-village-v3-vr.1cae7c95.glb",
-      "far": 400,
+      "far": 320,
       "cameraHeight": 1.828,
       "firstPerson": {
         "position": [22.1736, 0, 13.0198],
@@ -152,8 +168,23 @@
     },
 
     "memorial": {
+      "//instancing": [
+        "OFF for this venue by request.",
+        "",
+        "It is the ONE venue the pass does anything for: it loads the flat",
+        "site's own memorial-v4.glb, which draws 1,037 distinct shapes across",
+        "2,471 nodes, and collapsing the repeats removes 1,370 of those draw",
+        "calls. Off, the venue submits all 2,471 — 4,942 per frame in stereo,",
+        "against a ceiling of 300. Its triangles were never the problem; the",
+        "submits are.",
+        "",
+        "The other two are unaffected either way: their models were merged by",
+        "material by `npm run vr:optimize`, so they have zero groups of",
+        "four-or-more identical draws for the pass to find."
+      ],
+      "instancing": false,
       "//model": "DELIBERATELY ABSENT. VR loads the same memorial-v4.glb the flat site does. The rebuilt copy was structurally lossless — identical triangles, material for material — but it is not what is wanted here, so this venue opts out and takes the 2,471 draw calls that come with it. There is no recipe for it in vr-model-optimize.mjs either, so `npm run vr:optimize` cannot quietly put one back.",
-      "far": 1500,
+      "far": 1300,
       "cameraHeight": 1.5,
       "//firstPerson": "y is the authored concourse height. The navmesh spans 33 m of tiers, so its lowest point is NOT this floor — see the note in experience/session.",
       "firstPerson": {
@@ -167,7 +198,7 @@
     "stadium": {
       "//model": "Rebuilt for VR by `npm run vr:optimize`: 228 draws to 145 and 1,143k triangles to 685k. This one IS simplified, so re-judge the ratio in a headset before trusting it. The flat site keeps sofi-stadium-v5-web.glb.",
       "model": "/models/stadium/sofi-stadium-v5-web-vr.59953814.glb",
-      "far": 1200,
+      "far": 950,
       "//cameraHeight": "Not authored flat either; the default stands.",
       "//firstPerson": "y is the Gate 1 concourse, 40 m above the pitch the navmesh bottoms out at.",
       "firstPerson": {

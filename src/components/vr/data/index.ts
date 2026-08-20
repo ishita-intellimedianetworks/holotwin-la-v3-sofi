@@ -172,6 +172,17 @@ export interface VRVenue {
   /** True for a room rather than a campus. */
   interior?: boolean;
   /**
+   * Whether to collapse repeated geometry into `InstancedMesh` on load.
+   *
+   * ONLY WORTH IT ON A MODEL THAT STILL HAS REPEATS. The venues rebuilt by
+   * `npm run vr:optimize` have already been merged by material, so there is
+   * nothing left for the pass to find — measured, the village and stadium
+   * builds have ZERO groups of four-or-more identical draws — and running it
+   * costs two full traversals of the scene for no benefit. The memorial loads
+   * the flat site's own model, where it removes 1,370 of 2,471 draw calls.
+   */
+  instancing: boolean;
+  /**
    * Field of view for the FLAT PREVIEW behind the gate. Ignored in session —
    * the headset supplies its own projection.
    */
@@ -270,6 +281,7 @@ interface VRTuning {
   cameraHeight?: number;
   groundOffset?: number;
   far?: number;
+  instancing?: boolean;
   firstPerson?: { position?: number[]; rotationY?: number };
   /**
    * `number[]`, not the tuple, for `position` and `tiltRange`: TypeScript reads
@@ -322,6 +334,34 @@ interface RawScene {
   dollhouseOnly?: boolean;
   pois?: DestinationsByCategory;
 }
+
+/**
+ * The categories whose markers stand on their own, whatever else the data says.
+ *
+ * A MARKER HAS TO POINT AT SOMETHING YOU COULD NOT OTHERWISE FIND. Everything
+ * with a camera is already in the Layouts menu, reachable by name, so a pin
+ * floating on a gate you can travel to is not information — it is a second copy
+ * of the menu, hung in the air at eye level across a concourse you are trying
+ * to look at. Measured on the memorial, twenty of its twenty-six markers were
+ * exactly that: gates and parking, one pin each.
+ *
+ * A FACILITY IS THE OTHER CASE, and it is why this is a category test rather
+ * than a "does it carry text" test. A CCTV position, a Wi-Fi node, a medical
+ * station, a Lost & Found — those are the things somebody actually scans a
+ * concourse for, and every one of the stadium's six carries no prose at all. A
+ * text test would have deleted precisely the markers worth keeping and left the
+ * gates behind, which is backwards.
+ *
+ * Anything outside this set still qualifies by carrying real prose of its own.
+ */
+const EARNS_A_MARKER = new Set<string>([
+  "services",
+  "infra",
+  "safety",
+  "accessibility",
+  "cctv",
+  "transit",
+]);
 
 /**
  * Flatten one venue's POIs into the two lists the menus render.
@@ -390,6 +430,19 @@ function collectPois(pois: DestinationsByCategory | undefined): {
           note?: string;
           points?: string[];
         };
+
+        /**
+         * DOES THIS MARKER EARN ITS PLACE? See `EARNS_A_MARKER`.
+         *
+         * Built from the marker's own fields rather than the POI's, because a
+         * destination with several pins can carry prose on one of them.
+         */
+        const prose =
+          (point.note ?? poi.note) != null ||
+          (point.points?.length ?? 0) > 0 ||
+          (poi.tags?.length ?? 0) > 0;
+
+        if (!EARNS_A_MARKER.has(category) && !prose) return;
 
         hotspots.push({
           // The POI id alone is not unique once a destination has two markers.
@@ -504,6 +557,7 @@ export const VENUES: VRVenue[] = (cfg.scenes as RawScene[])
         tuning.cameraHeight ?? VR_DEFAULTS.cameraHeight ?? scene.eyeHeight,
       groundOffset: tuning.groundOffset ?? VR_DEFAULTS.groundOffset ?? 0,
       interior: scene.interior,
+      instancing: tuning.instancing ?? VR_DEFAULTS.instancing ?? true,
       fov: tuning.fov ?? VR_DEFAULTS.fov ?? DEFAULT_FOV,
       far: tuning.far ?? VR_DEFAULTS.far ?? DEFAULT_FAR,
       dollHouse,

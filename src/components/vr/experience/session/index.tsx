@@ -12,6 +12,7 @@ import { useVRState } from "../state";
 import { NavmeshClamp } from "../clamp";
 import { LoadingPanel } from "../loading-panel";
 import { DollHouse } from "../doll-house";
+import { VRBackdrop } from "../environment";
 import { Hotspots } from "../hotspots";
 import { NavmeshLocomotion } from "../locomotion";
 import { VRMenus } from "../menus";
@@ -64,10 +65,10 @@ function Walkable({ debug }: { debug: boolean }) {
     // A floor position, NOT an eye position — the headset adds standing height
     // on top of the XR origin, so adding `eyeHeight` here would stack the two.
     //
-    // `groundOffset` is a different thing and is normally 0: it corrects a
-    // navmesh baked at the wrong datum, and it is added here, at a teleport
-    // landing and on every step, so those three can never settle at different
-    // heights over the same piece of floor. See `data`.
+    // `groundOffset` is a different thing: a small lift off the navmesh
+    // surface, shared by every venue, added here AND at a teleport landing AND
+    // on every step — so those three can never settle at different heights over
+    // the same piece of floor. See `vr-scenes.json`.
     position: [sx, floorY + venue.groundOffset, sz] as [number, number, number],
     rotationY: venue.spawn.rotationY,
   };
@@ -105,6 +106,12 @@ export function Session({ store, debug }: { store: XRStore; debug: boolean }) {
 
   return (
     <>
+      {/* Black behind the doll house, sky behind first person — see
+          `../environment` for why the two views want opposite things. Here
+          rather than beside the IBL because it is the only part that needs to
+          know which view is up. */}
+      <VRBackdrop />
+
       {/* Its own boundary: `TeleportDriver` loads the navmesh to snap its
           landing, and an unboundaried suspension inside Canvas blanks the
           whole tree. */}

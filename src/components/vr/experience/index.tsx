@@ -18,6 +18,7 @@ import {
 } from "@/components/vr/data/venue-provider";
 import { VenueLoadProvider, useVenueLoad } from "./load-progress";
 import { EnterVROverlay } from "./enter-vr-overlay";
+import { VREnvironment } from "./environment";
 import { Session } from "./session";
 import { VRStateProvider, useVRState } from "./state";
 import { store } from "./xr-store";
@@ -65,13 +66,25 @@ function ModelReadyProbe({ path }: { path: string }) {
  * stable across every render — R3F rebuilds the camera when this changes.
  */
 /**
- * A tenth of a metre. Nearer than any panel (2 m) or anything held, and no
- * nearer than it has to be: the depth buffer's precision is spread across
- * near..far, and halving the near plane costs as much of it as doubling the far
- * one. One value for every venue — a room and a stadium want the same answer to
- * "how close can something get to your face".
+ * A QUARTER of a metre, and the exact value is doing real work.
+ *
+ * Depth precision is governed by the near:far ratio and `near` dominates it —
+ * halving the near plane costs as much precision as doubling the far one. At
+ * 0.1 m against the memorial's 1500 m that ratio is 15,000:1, and what runs out
+ * of precision first is two surfaces that are nearly coplanar: a wall and its
+ * trim, a floor and its inlay. They fight for the same depth, one wins, and the
+ * other is simply not drawn — which reads as a hole in the wall rather than as
+ * a rendering artefact. It is a VR problem specifically because an XR
+ * framebuffer's depth buffer is commonly shallower than a desktop canvas's, so
+ * the same model that is solid on the flat site comes apart in a headset.
+ *
+ * 0.25 m is two and a half times the precision at no cost anywhere else:
+ * nothing in this experience is meant to be looked at closer than that. The
+ * panels sit at 2 m, the dock at 2 m, and a controller held against your own
+ * face is not a view anyone needs. Pushing it further — 0.5 m, 1 m — would buy
+ * more and start clipping a hand held out in front of you.
  */
-const NEAR_PLANE = 0.1;
+const NEAR_PLANE = 0.25;
 
 const CAMERA_DEFAULTS = { fov: 70, near: NEAR_PLANE, far: 2000 };
 
@@ -266,7 +279,7 @@ function VRCanvas({
         <ContextWatch onLost={onContextLost} />
 
         {/*
-          FLAT AMBIENT LIGHT, and no sun.
+          AMBIENT AND AN ENVIRONMENT, and still no sun.
 
           `scenes.json` carries a full lighting rig per venue — a
           shadow-casting directional sun, an ambient tint, an environment
@@ -275,10 +288,40 @@ function VRCanvas({
           shadow-casting directional light renders a depth pass over a
           kilometre-wide stadium once per eye per frame, which is the single
           most expensive thing that could be added to this scene. The models
-          carry baked lighting in their materials, so a flat ambient reads
-          correctly without any of that cost.
+          carry baked lighting in their materials, so ambient plus a prefiltered
+          environment reads correctly without any of that cost — and unlike a
+          bare ambient, it gives reflective surfaces something to reflect.
         */}
-        <ambientLight intensity={3} />
+        {/*
+          The image-based lighting, and ONLY that — see `./environment`. Mounted
+          here rather than inside `Visit` so a venue change does not tear the
+          IBL down and re-attach it. What is drawn BEHIND the venue is
+          `VRBackdrop`, which lives in `./session` because it depends on which
+          view is up.
+
+          Its own boundary: this fetches a 1.4 MB HDR, and a slow or failed
+          fetch must not take the scene down with it.
+        */}
+        <Suspense fallback={null}>
+          <VREnvironment />
+        </Suspense>
+
+        {/*
+          2.2, AND THE NUMBER IS A BALANCE RATHER THAN A COPY.
+
+          The flat site lights a venue with three things — ambient 0.8, a sun at
+          7.9, and the HDR at 0.65. VR takes the HDR at the same 0.65 so the two
+          views share a sky, and cannot take the sun at any price: a
+          shadow-casting directional over a kilometre-wide venue is a depth pass
+          per eye per frame. So the ambient here is not the flat site's 0.8, it
+          is the flat site's 0.8 plus whatever of the sun can be replaced by
+          light that costs nothing.
+
+          It was 3 when ambient was the only light in the scene, and 3 with the
+          HDR on top blows the baked textures out. This is the one number to
+          nudge if the venues read too dark or too washed.
+        */}
+        <ambientLight intensity={2.2} />
 
         {/* Its own boundary: this suspends for the whole decode, and an
             unboundaried suspension inside Canvas blanks the entire tree. */}

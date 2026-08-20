@@ -83,16 +83,18 @@ export function LoadingPanel({ title }: { title: string }) {
         <ProgressBar percent={percent} indeterminate={indeterminate} />
 
         {/*
-          The number goes away when it stops meaning anything.
+          ALWAYS A NUMBER.
 
-          While the decode runs — or behind a tunnel that sends no
-          Content-Length — there is no honest percentage, and printing the last
-          one it happened to reach would be a figure frozen on screen next to a
-          bar that is still moving. "Preparing" says the same thing without
-          claiming a measurement.
+          It used to read "Preparing…" through the decode, on the argument that
+          a Draco decode reports no progress so there is nothing honest to
+          print. But there is: `percent` holds at 95 there by construction — the
+          download is genuinely 95% of the wait — and a bar sitting just short of
+          full next to the figure 95% says exactly that. Swapping the number for
+          a word at the last moment reads as the count having failed, which is a
+          worse thing to believe than "nearly there".
         */}
         <VRText fontSize={TEXT.label} color={COLOR.muted} textAlign="center">
-          {indeterminate ? "Preparing…" : `${percent}%`}
+          {`${percent}%`}
         </VRText>
       </Container>
     </VRFullscreen>

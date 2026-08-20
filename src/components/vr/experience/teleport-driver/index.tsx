@@ -180,12 +180,10 @@ export function TeleportDriver() {
       /**
        * The floor, plus the venue's offset if one is authored.
        *
-       * `groundOffset` is normally 0 and should stay that way: a headset
-       * supplies standing height itself, measured from the XR origin, so the
-       * origin belongs ON the floor. The knob exists for a navmesh baked at the
-       * wrong datum — a mesh authored at eye height, or one floating a hand's
-       * width over the geometry it describes — which is an asset fact no code
-       * can infer. See `vr-scenes.json`.
+       * `groundOffset` is a small shared lift off the navmesh surface, NOT an
+       * eye height: a headset supplies standing height itself, measured from
+       * the XR origin, so adding a person's full height here would put their
+       * eyes through the ceiling. See `vr-scenes.json`.
        *
        * No floor found at all — a venue whose navmesh has not loaded — leaves
        * the hint standing, which is the old behaviour and the best guess

@@ -49,11 +49,11 @@ const CHIP = 34;
 /**
  * What the control column has to itself.
  *
- * Wide enough for "Right stick", which is the longest thing that goes in it.
+ * Wide enough for "Left stick ← →", which is the longest thing in it.
  * Fixed rather than sized to content so every description shares a left edge —
  * a ragged second column is what makes a table read as a list again.
  */
-const CONTROL_COL = 132;
+const CONTROL_COL = 176;
 
 /** One row: the control, then what it does. */
 function Row({ control, children }: { control: ReactNode; children: string }) {
@@ -190,15 +190,34 @@ export function InstructionsMenu({
           <>
             <Row control={stick("Left stick")}>Walk</Row>
             <Row control={stick("Right stick")}>Turn on the spot</Row>
-            <Row control={stick("Trigger")}>Press what you point at</Row>
+            <Row control={stick("Right trigger")}>Press what you point at</Row>
           </>
         ) : (
           <>
-            {/* Left rotates, right points — the same division of labour as
-                first person, and the reason the right stick is not mentioned
-                here is that it deliberately does nothing in this view. */}
-            <Row control={stick("Left stick")}>Spin the model round</Row>
-            <Row control={stick("Trigger")}>Step inside, in first person</Row>
+            {/*
+              THE SAME HANDS DOING THE SAME JOBS AS FIRST PERSON. Left drives
+              the world, right points and presses — so the only thing to learn
+              when you step inside is that the left stick now moves you instead
+              of the model.
+
+              The stick is split across two rows because it does two different
+              things on its two axes, and one row saying "spin it" leaves the
+              tilt undiscovered. `use-doll-house-rotation` maps x to yaw and y
+              to tilt, so both are real.
+
+              The right STICK is deliberately unbound here, which is why it is
+              not listed: aiming and turning would fight each other, and there
+              is nothing in this view to turn.
+            */}
+            <Row control={stick("Left stick ← →")}>
+              Spin the model round
+            </Row>
+            <Row control={stick("Left stick ↑ ↓")}>
+              Tip it towards you or away
+            </Row>
+            <Row control={stick("Right trigger")}>
+              Press the model to step inside
+            </Row>
           </>
         )}
 
