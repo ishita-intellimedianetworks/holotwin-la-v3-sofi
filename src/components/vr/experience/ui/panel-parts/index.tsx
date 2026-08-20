@@ -162,13 +162,26 @@ export function SectionLabel({
 export function PrimaryButton({
   label,
   onSelect,
+  fullWidth = false,
 }: {
   label: string;
   onSelect: () => void;
+  /**
+   * Span the card instead of hugging the label.
+   *
+   * For a panel whose ONLY action this is. A pill sized to its own text is a
+   * small target for a hand-held ray — whatever makes a small target awkward,
+   * tremor or a fraction of a degree of aim, applies here — and when there is
+   * nothing else to press, there is nothing for the extra width to compete
+   * with. Off by default: a button that spans the card reads as the primary
+   * action, which is a claim worth making deliberately.
+   */
+  fullWidth?: boolean;
 }) {
   return (
     <Container
       height={PRIMARY_HEIGHT}
+      width={fullWidth ? "100%" : undefined}
       paddingX={SPACE.primaryX}
       flexShrink={0}
       alignItems="center"

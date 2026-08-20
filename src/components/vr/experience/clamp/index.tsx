@@ -3,7 +3,10 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { isWalkable } from "@/components/vr/hooks/use-navmesh-collider";
+import {
+  LEVEL_HEIGHT,
+  stepFloor,
+} from "@/components/vr/hooks/use-navmesh-collider";
 import { useVRState } from "../state";
 
 /**
@@ -54,8 +57,9 @@ import { useVRState } from "../state";
  * concourse yanks repeatedly — the judder, and the repeated snapping is what
  * reads as the scene flashing.
  *
- * Widening `isWalkable` instead is the wrong axis (see the note there — it
- * grows the walkable region outward and creates more holes than it closes).
+ * Widening the floor test instead is the wrong axis (see the note on
+ * `isWalkable` — it grows the walkable region outward and creates more holes
+ * than it closes).
  * TIME separates the two cases: crossing a seam is over in a few frames, and
  * walking out of the building is not.
  *
@@ -63,6 +67,15 @@ import { useVRState } from "../state";
  * correction, when it comes, is still the small step back this promises.
  */
 const GRACE_SECONDS = 0.25;
+
+/**
+ * THE TEST HAS TO KNOW ABOUT LEVELS or it does nothing on the venues that need
+ * it most. "Is there navmesh over this column?" is the union of every storey,
+ * so on a stadium concourse — with the pitch below and a deck above — it is
+ * true almost everywhere, including out over the drop this exists to stop
+ * someone walking into. `LEVEL_HEIGHT` is the band that separates a tier the
+ * head can be over mid-stride from the deck below.
+ */
 
 const _head = new THREE.Vector3();
 
@@ -98,7 +111,22 @@ export function NavmeshClamp({ navmesh }: { navmesh: THREE.Mesh | null }) {
     // tests the head.
     state.camera.getWorldPosition(_head);
 
-    if (isWalkable(navmesh, _head.x, _head.z)) {
+    /**
+     * The floor is sought around the ORIGIN's height, not the head's. The
+     * origin is where locomotion put the player's feet; the head is wherever
+     * they are looking from, which under room-scale is a standing height above
+     * it and leaning.
+     */
+    if (
+      stepFloor(
+        navmesh,
+        _head.x,
+        _head.z,
+        origin.position.y,
+        LEVEL_HEIGHT,
+        LEVEL_HEIGHT,
+      ) != null
+    ) {
       offFor.current = 0;
       if (anchor.current == null) {
         anchor.current = new THREE.Vector2(_head.x, _head.z);

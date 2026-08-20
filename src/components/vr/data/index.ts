@@ -156,6 +156,19 @@ export interface VRVenue {
    * person is in this model's units.
    */
   eyeHeight?: number;
+  /**
+   * Metres added to every navmesh height reading in this venue. Normally 0.
+   *
+   * NOT an eye height — see above. This is the correction for a navmesh whose
+   * DATUM is wrong: baked a hand's width above the geometry it describes, or
+   * exported at eye level rather than floor level. That is a fact about the
+   * asset, so it is authored per venue in `vr-scenes.json` rather than guessed.
+   *
+   * It applies in exactly one place conceptually — "what height is the floor
+   * here?" — and therefore in all three that ask: the spawn, a teleport
+   * landing, and every step of a walk. They cannot drift apart.
+   */
+  groundOffset: number;
   /** True for a room rather than a campus. */
   interior?: boolean;
   /**
@@ -163,6 +176,18 @@ export interface VRVenue {
    * the headset supplies its own projection.
    */
   fov: number;
+  /**
+   * The camera's far plane, in metres. NOT preview-only, unlike `fov`: three
+   * hands the camera's near and far to the session as `depthNear`/`depthFar`,
+   * so this is the headset's clip distance too.
+   *
+   * PER VENUE BECAUSE THE VENUES ARE NOT THE SAME SIZE — 290 m corner to corner
+   * for the village, 1274 m for the memorial. One number big enough for the
+   * memorial spends the depth buffer's precision everywhere, and lost precision
+   * is what lets two coplanar surfaces fight and a floor read as see-through.
+   * Sized to the model it has to contain and no further.
+   */
+  far: number;
   /** How the doll house frames this venue. */
   dollHouse: VRDollHouse;
   layouts: VRLayout[];
@@ -240,8 +265,11 @@ interface VRTuning {
    * VR-only half of the config, so hiding something here cannot hide it there.
    */
   hidden?: boolean;
+  model?: string;
   fov?: number;
   cameraHeight?: number;
+  groundOffset?: number;
+  far?: number;
   firstPerson?: { position?: number[]; rotationY?: number };
   /**
    * `number[]`, not the tuple, for `position` and `tiltRange`: TypeScript reads
@@ -270,6 +298,15 @@ const DOLL_HOUSE_FALLBACK: VRDollHouse = {
 const DEFAULT_LOCOMOTION = { moveSpeed: 1.6, teleportSeconds: 1.5 };
 const TURN_SPEED = 90;
 const DEFAULT_FOV = 70;
+
+/**
+ * The far plane for a venue that does not state one, in metres.
+ *
+ * Generous rather than tuned: an unstated far plane belongs to a venue nobody
+ * has measured, and clipping the far side off a building is a worse failure
+ * than a soft depth buffer. Every venue that IS measured overrides it.
+ */
+const DEFAULT_FAR = 2000;
 
 /** The raw shape of a `scenes.json` entry, narrowed to what VR reads. */
 interface RawScene {
@@ -445,14 +482,30 @@ export const VENUES: VRVenue[] = (cfg.scenes as RawScene[])
     return {
       id: scene.key,
       title: scene.label,
-      model: scene.url,
+      /**
+       * A VR-ONLY BUILD OF THE SAME BUILDING, where one exists.
+       *
+       * `scenes.json` names the model the flat site draws, and a desktop GPU
+       * draws it happily — one eye, no deadline. A headset draws it twice
+       * against 13.9 ms, and the memorial submitted 2,471 draw calls doing it.
+       * So VR gets a rebuilt copy: same geometry, same materials, same
+       * coordinates, merged so it can be submitted in 201.
+       *
+       * A path here rather than a flag, because the two files are a fact about
+       * the assets on disk. `npm run vr:optimize` produces them and
+       * `npm run vr:check` verifies both the budget and that the rebuild did
+       * not move the building out from under the navmesh.
+       */
+      model: tuning.model ?? VR_DEFAULTS.model ?? scene.url,
       navmesh: scene.navmeshUrl as string,
       floorPlan: scene.floorplanUrl,
       spawn,
       eyeHeight:
         tuning.cameraHeight ?? VR_DEFAULTS.cameraHeight ?? scene.eyeHeight,
+      groundOffset: tuning.groundOffset ?? VR_DEFAULTS.groundOffset ?? 0,
       interior: scene.interior,
       fov: tuning.fov ?? VR_DEFAULTS.fov ?? DEFAULT_FOV,
+      far: tuning.far ?? VR_DEFAULTS.far ?? DEFAULT_FAR,
       dollHouse,
       layouts,
       hotspots,

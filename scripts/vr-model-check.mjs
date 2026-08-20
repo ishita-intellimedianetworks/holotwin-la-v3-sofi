@@ -263,12 +263,31 @@ function report(label, file, a, baseline) {
   }
 
   if (baseline) {
+    /**
+     * OUTWARD GROWTH ONLY, and the asymmetry is the whole point.
+     *
+     * These bounds are the union of each primitive's AABB with its node's
+     * transform applied to the eight corners — the only box readable without
+     * decoding Draco, and a LOOSE one wherever a node is rotated, because the
+     * rotated corners of an axis-aligned box enclose more than the geometry
+     * does. The village has buildings placed at angles and its box is 6.6 m
+     * wider than its vertices; the memorial and the stadium are axis-aligned
+     * and theirs are exact.
+     *
+     * So a rebuild that bakes transforms into vertices legitimately reports a
+     * SMALLER box than the original — the slack is gone, not the geometry. Read
+     * symmetrically that shrinkage looked like 14 m of drift on the village and
+     * condemned a build whose vertices had moved half a metre.
+     *
+     * Growing is the direction that cannot be explained away: geometry outside
+     * where it used to be is geometry that moved.
+     */
     let drift = 0;
     for (let i = 0; i < 3; i++) {
       drift = Math.max(
         drift,
-        Math.abs(baseline.lo[i] - a.lo[i]),
-        Math.abs(baseline.hi[i] - a.hi[i]),
+        baseline.lo[i] - a.lo[i],
+        a.hi[i] - baseline.hi[i],
       );
     }
     const ok = drift < 0.5;
@@ -287,7 +306,13 @@ function report(label, file, a, baseline) {
 const args = process.argv.slice(2);
 const againstAt = args.indexOf("--against");
 const baselineFile = againstAt >= 0 ? args[againstAt + 1] : null;
-const targets = args.filter((a, i) => !a.startsWith("--") && i !== againstAt + 1);
+// `againstAt + 1` is 0 when there is no `--against`, which silently ate the
+// first file argument — `vr-model-check.mjs cand.glb` reported every venue in
+// scenes.json instead of the candidate. Only skip that slot when the flag is
+// actually present.
+const targets = args.filter(
+  (a, i) => !a.startsWith("--") && (againstAt < 0 || i !== againstAt + 1),
+);
 
 const baseline = baselineFile ? analyze(path.resolve(ROOT, baselineFile)) : null;
 
@@ -314,13 +339,38 @@ if (targets.length > 0) {
   for (const s of scenes.scenes) {
     if (s.dollhouseOnly || !s.navmeshUrl) continue;
     if (vr.venues?.[s.key]?.hidden) continue;
-    const file = path.join(ROOT, "public", s.url);
+
+    /**
+     * THE VR OVERRIDE WINS, because it is what a headset downloads.
+     *
+     * `scenes.json` names the model the flat site draws. Where a venue has been
+     * rebuilt for VR by `npm run vr:optimize`, `vr-scenes.json` points at that
+     * copy instead, and grading the flat one here grades a file nothing loads:
+     * it went on reporting the memorial at 2,471 draw calls long after VR had
+     * stopped loading the model that submits them.
+     */
+    const url = vr.venues?.[s.key]?.model ?? vr.defaults?.model ?? s.url;
+    const rebuilt = url !== s.url;
+
+    const file = path.join(ROOT, "public", url);
     if (!fs.existsSync(file)) {
-      console.log(`\n${s.key}: MISSING ${s.url}`);
+      console.log(`
+${s.key}: MISSING ${url}`);
       failed = true;
       continue;
     }
-    report(`${s.key} — ${s.label}`, file, analyze(file), null);
+
+    // The flat model is the baseline for a rebuild, so a pass that moved the
+    // building shows up here rather than under a headset.
+    const flat = path.join(ROOT, "public", s.url);
+    const against = rebuilt && fs.existsSync(flat) ? analyze(flat) : null;
+
+    report(
+      `${s.key} — ${s.label}${rebuilt ? "  [VR build]" : ""}`,
+      file,
+      analyze(file),
+      against,
+    );
   }
 }
 

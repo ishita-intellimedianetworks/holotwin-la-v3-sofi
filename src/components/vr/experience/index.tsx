@@ -1,7 +1,15 @@
 "use client";
 
-import { Fragment, Suspense, useCallback, useEffect, useState } from "react";
-import { Canvas } from "@react-three/fiber";
+import {
+  Fragment,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import type * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
 import { XR, XROrigin } from "@react-three/xr";
 import {
@@ -51,6 +59,21 @@ function ModelReadyProbe({ path }: { path: string }) {
   useEffect(markModelReady, [markModelReady]);
   return null;
 }
+
+/**
+ * Born-with values for the one camera. MODULE SCOPE so the object identity is
+ * stable across every render — R3F rebuilds the camera when this changes.
+ */
+/**
+ * A tenth of a metre. Nearer than any panel (2 m) or anything held, and no
+ * nearer than it has to be: the depth buffer's precision is spread across
+ * near..far, and halving the near plane costs as much of it as doubling the far
+ * one. One value for every venue — a room and a stadium want the same answer to
+ * "how close can something get to your face".
+ */
+const NEAR_PLANE = 0.1;
+
+const CAMERA_DEFAULTS = { fov: 70, near: NEAR_PLANE, far: 2000 };
 
 function VRGate({
   onEnter,
@@ -121,17 +144,127 @@ function Visit({ debug }: { debug: boolean }) {
   );
 }
 
-function VRCanvas({ debug }: { debug: boolean }) {
+/**
+ * Applies the venue's projection to the ONE camera, imperatively.
+ *
+ * NOT `<Canvas camera={{ ... }}>` with per-venue values in it. R3F compares
+ * that object shallowly and BUILDS A NEW CAMERA when it differs, so a venue
+ * switch — which deliberately never remounts the Canvas or the XR session,
+ * because remounting either drops the WebGL context the headset is bound to —
+ * would quietly swap the camera out from under a live session. Writing the two
+ * fields is the same result with none of that.
+ *
+ * IT REACHES THE HEADSET. three's `WebXRManager.updateCamera` reads
+ * `camera.near`/`camera.far` every frame and calls `session.updateRenderState`
+ * whenever they change, so this is the clip distance in the headset and not
+ * just in the flat preview behind the gate.
+ */
+function VenueCamera() {
+  const { venue } = useVenueContext();
+
+  /**
+   * In the frame loop rather than an effect, and the reason is the lint rule
+   * that made the effect illegal: `useThree`'s camera is a hook return value
+   * and the React Compiler forbids writing to one. `useFrame`'s state is handed
+   * to the callback fresh each frame and carries no such promise — which is the
+   * same reason everything else that moves the player writes from here.
+   *
+   * Three comparisons a frame, and they are equal every frame but the first
+   * after a venue change.
+   */
+  useFrame((state) => {
+    const camera = state.camera as THREE.PerspectiveCamera;
+    if (!camera.isPerspectiveCamera) return;
+
+    if (
+      camera.fov === venue.fov &&
+      camera.near === NEAR_PLANE &&
+      camera.far === venue.far
+    ) {
+      return;
+    }
+
+    camera.fov = venue.fov;
+    camera.near = NEAR_PLANE;
+    camera.far = venue.far;
+    camera.updateProjectionMatrix();
+  });
+
+  return null;
+}
+
+/**
+ * Reports a lost WebGL context, so a blackout says what it is.
+ *
+ * THE FAILURE IS OTHERWISE INDISTINGUISHABLE FROM THE SCENE. When the driver
+ * takes the context away — which on a standalone headset means it ran out of
+ * GPU memory, and these venues carry 33 to 187 textures each — three keeps
+ * being asked to render and quietly draws nothing. The headset shows black.
+ * So does a session that is merely missing its frame deadline, and so does a
+ * model that failed to load, and the three want completely different answers.
+ *
+ * `preventDefault` on the lost event is what allows a restore to be attempted
+ * at all; without it the browser will not fire `webglcontextrestored`. The
+ * restore is not handled here beyond clearing the message, because every
+ * texture and buffer has to be re-uploaded to be usable and drei's cache still
+ * holds the old handles — the honest recovery is the reload the gate offers.
+ */
+function ContextWatch({ onLost }: { onLost: (lost: boolean) => void }) {
+  const gl = useThree((state) => state.gl);
+
+  useEffect(() => {
+    const canvas = gl.domElement;
+
+    const lost = (event: Event) => {
+      event.preventDefault();
+      console.error("[VR] WebGL context lost — the GPU dropped the scene.");
+      onLost(true);
+    };
+    const restored = () => {
+      console.warn("[VR] WebGL context restored.");
+      onLost(false);
+    };
+
+    canvas.addEventListener("webglcontextlost", lost);
+    canvas.addEventListener("webglcontextrestored", restored);
+    return () => {
+      canvas.removeEventListener("webglcontextlost", lost);
+      canvas.removeEventListener("webglcontextrestored", restored);
+    };
+  }, [gl, onLost]);
+
+  return null;
+}
+
+function VRCanvas({
+  debug,
+  onContextLost,
+}: {
+  debug: boolean;
+  onContextLost: (lost: boolean) => void;
+}) {
   const { venue } = useVenueContext();
 
   return (
     <Canvas
       gl={{ localClippingEnabled: true }}
-      // Preview only — in session the headset supplies its own projection.
-      // Per venue, from `vr-scenes.json`.
-      camera={{ fov: venue.fov }}
+      /**
+       * STABLE, and every venue-specific value is applied by `VenueCamera`
+       * above instead — see the note there. These are only the defaults the
+       * camera is born with.
+       *
+       * `far` matters even as a default, because R3F's own is 1000 m
+       * (`PerspectiveCamera(75, 0, 0.1, 1000)`) and three hands it to the
+       * session as `depthFar`. The memorial is 1274 m corner to corner, so
+       * accepting that default is what cut the far stand off the venue: it
+       * rendered up to 1000 m and no further.
+       */
+      camera={CAMERA_DEFAULTS}
     >
       <XR store={store}>
+        <VenueCamera />
+        <ContextWatch onLost={onContextLost} />
+
         {/*
           FLAT AMBIENT LIGHT, and no sun.
 
@@ -162,6 +295,29 @@ function VRCanvas({ debug }: { debug: boolean }) {
 export default function VRExperience({ venueId }: { venueId?: string }) {
   const [isInVrSession, setIsInVrSession] = useState(false);
   const [enterError, setEnterError] = useState<string | null>(null);
+  const [contextLost, setContextLost] = useState(false);
+
+  /**
+   * Read by the exit handler, which runs from an event listener registered
+   * once and would otherwise close over the first value forever.
+   */
+  const contextLostRef = useRef(false);
+
+  /**
+   * Folded into the gate's error slot rather than given a screen of its own.
+   * Losing the context leaves the canvas black whatever is drawn over it, so
+   * the only surface that can still say anything is the DOM in front of it —
+   * and that is the gate, which already knows how to show a failure.
+   *
+   * The gate is hidden during a session, so this puts the session down too. It
+   * is not a demotion: the context IS gone, the headset is showing black, and
+   * pretending otherwise leaves the person in there with nothing to read.
+   */
+  const handleContextLost = useCallback((lost: boolean) => {
+    contextLostRef.current = lost;
+    setContextLost(lost);
+    if (lost) setIsInVrSession(false);
+  }, []);
 
   // `?debug=true` draws the navmesh as a wireframe. A lazy initialiser, not an
   // effect: this only mounts in the browser (`ssr: false`), and a
@@ -182,6 +338,15 @@ export default function VRExperience({ venueId }: { venueId?: string }) {
    * puts them back at the gate, which is where the flow starts.
    */
   const handleVRExit = useCallback(() => {
+    /**
+     * EXCEPT AFTER A LOST CONTEXT, where the reload is the one thing that must
+     * not happen. Losing the context ends the session, so this fires — and a
+     * reload would replace the explanation with a fresh gate that looks exactly
+     * like a normal start, which is how a GPU running out of memory came to
+     * look like nothing at all. The gate is already back, carrying the reason,
+     * and reloading is a button away.
+     */
+    if (contextLostRef.current) return;
     window.location.reload();
   }, []);
 
@@ -223,9 +388,13 @@ export default function VRExperience({ venueId }: { venueId?: string }) {
             <VRGate
               onEnter={onEnterVrClick}
               isInVrSession={isInVrSession}
-              error={enterError}
+              error={
+                contextLost
+                  ? "The headset ran out of graphics memory and dropped the scene. Reload to try again."
+                  : enterError
+              }
             />
-            <VRCanvas debug={debug} />
+            <VRCanvas debug={debug} onContextLost={handleContextLost} />
           </VenueLoadProvider>
         </VRVenueProvider>
       </div>

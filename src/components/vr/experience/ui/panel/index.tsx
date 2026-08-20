@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useThree } from "@react-three/fiber";
 import { Container } from "@react-three/uikit";
 import { POINTER_ORDER, RADIUS, SPACE } from "../tokens";
 import { VRFullscreen } from "../fullscreen";
@@ -15,11 +16,43 @@ import { GlassSurface } from "../glass-surface";
  * A card sized in world units would be a postage stamp in one and a billboard
  * in the other.
  *
+ * ITS WIDTH IS MEASURED AGAINST THE VIEWPORT'S HEIGHT, and that is the fix for
+ * a card that came out stretched. `Fullscreen` sizes its root from the CANVAS,
+ * and in an immersive session the canvas is the whole framebuffer — both eyes,
+ * side by side — so it is about twice as wide as one eye sees. A width given as
+ * a percentage of that is a card half again as wide as it was drawn on the
+ * desktop, and only in session, which is why it looked like it stretched at
+ * random. The vertical dimension has no such doubling: one eye's height is the
+ * framebuffer's height.
+ *
+ * So a percentage here means "of the height", scaled by one shared factor —
+ * see `WIDTH_PER_HEIGHT`. The card stops being a function of how the runtime
+ * chose to lay out two eyes, and how wide panels feel becomes one number rather
+ * than a percentage at every call site.
+ *
  * THE SCRIM DOES NOT TINT. Dimming the view is the desktop-modal reflex and the
  * wrong one in a headset: a flat panel dims a page you are looking at, but this
  * would dim the ROOM you are standing in. The layer itself stays — see
  * `onDismiss`.
  */
+
+/**
+ * How much width one unit of viewport height buys — the single lever every
+ * panel's width is scaled by.
+ *
+ * It started at 16/9, the aspect the existing percentages had been chosen by
+ * eye against on a desktop screen, so that measuring them against height
+ * instead of width changed nothing about how they looked. That turned out to be
+ * the wrong target: matching the desktop is not the goal, and at that value the
+ * cards read cramped through a lens — text wrapping early, two columns fighting
+ * for a line, everything crowding its own padding.
+ *
+ * 2.2 is tuned rather than derived. It keeps every panel's width in the same
+ * proportion to every other's, because they all pass through here, so the 40%
+ * of a menu and the 46% of a hotspot card stay the relationship they were
+ * given. Widen or narrow all of them by editing this one number.
+ */
+const WIDTH_PER_HEIGHT = 2.2;
 
 export function VRPanel({
   children,
@@ -65,6 +98,18 @@ export function VRPanel({
    */
   onDismiss?: () => void;
 }) {
+  /**
+   * The canvas height in pixels, which is what `Fullscreen`'s root is sized in.
+   * Reading `size` rather than `viewport` because uikit works in the same
+   * pixel units this reports.
+   */
+  const viewportHeight = useThree((state) => state.size.height);
+
+  const resolvedWidth =
+    typeof width === "string"
+      ? Math.round((parseFloat(width) / 100) * WIDTH_PER_HEIGHT * viewportHeight)
+      : width;
+
   return (
     <VRFullscreen
       alignItems="center"
@@ -101,7 +146,7 @@ export function VRPanel({
         paddingX={SPACE.panelX}
         paddingY={SPACE.panelY}
         gapRow={SPACE.section}
-        width={width}
+        width={resolvedWidth}
         height={height}
         /*
           Only caps a card that sizes to its content; an explicit height must

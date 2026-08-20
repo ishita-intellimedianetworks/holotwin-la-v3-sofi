@@ -5,10 +5,8 @@ import { Container } from "@react-three/uikit";
 import {
   BoxIcon,
   BuildingIcon,
-  CrosshairIcon,
   HouseIcon,
   InfoIcon,
-  JoystickIcon,
   LayersIcon,
   LogOutIcon,
   MapPinIcon,
@@ -18,45 +16,47 @@ import { VENUES } from "@/components/vr/data";
 import { VRPanel } from "../../ui/panel";
 import { PanelList } from "../../ui/panel-list";
 import { PrimaryButton } from "../../ui/panel-parts";
-import { COLOR, SPACE, TEXT } from "../../ui/tokens";
+import { COLOR, RADIUS, SPACE, TEXT } from "../../ui/tokens";
 import { VRText } from "../../ui/text";
 
 /**
  * Controls. A separate set per view, because the controls genuinely differ.
  *
- * IT NAMES EVERY BUTTON. The tempting argument against is that the dock is on
- * screen while you read this and its actions speak for themselves. They do not:
- * they are glyphs, not labels, and Resources in particular is the only way a
- * marker appears at all — nothing else in a headset would tell you the
- * empty-looking concourse is deliberate.
+ * A TWO-COLUMN TABLE, following the ARCHVIZ VR panel: the control on the left,
+ * what it does on the right, one line each. It was a list of sentences, and the
+ * sentence form is what made it long — "Click on the Layouts Button to travel
+ * to a saved viewpoint" spends six words restating that a button is a button
+ * before it says anything. A column of controls beside a column of outcomes
+ * says the same thing in three words and can be scanned rather than read, which
+ * is what a panel you see once on arrival has to survive.
  *
- * IT STAYS A SMALL CARD ANYWAY. Extra lines are paid for by scrolling, not by
- * growing.
+ * THE CONTROL COLUMN IS THE DOCK'S OWN ICON WHEREVER THERE IS ONE, drawn in a
+ * chip so it reads as the button it is, at the same size relationship the dock
+ * uses. Naming them in words meant reading a word, remembering it, and then
+ * hunting the bar for whichever glyph might mean it. Words stay for the things
+ * that are not buttons — the sticks, the trigger — because those have no icon
+ * to point at.
  *
- * EVERY LINE IS LED BY THE THING IT DESCRIBES. There are no bullets: a bullet
- * only says "a line starts here", which the layout already says. A joystick
- * leads the thumbstick lines and the dock's own icon leads each button.
- *
- * THE WORDING FOLLOWS THE FLAT SITE'S OWN INSTRUCTIONS OVERLAY, which phrases
- * every line as the action then its result. Same two views, same job, so the
- * two should not describe it in two different voices.
+ * IT STAYS A SMALL CARD. Extra lines are paid for by scrolling, not by growing.
  */
 
-/**
- * The leading slot. Every line has one, so their text shares a left edge.
- * Matches the dock's glyphs, scaled to a line of body text.
- */
+/** Matches the dock's glyphs, scaled to sit inside a row. */
 const GLYPH = 20;
 
+/** The chip the icon sits in — round, like the dock's discs. */
+const CHIP = 34;
+
 /**
- * One line.
+ * What the control column has to itself.
  *
- * `flexShrink={0}` so it keeps its height in the scrolling list, and the text
- * grows into the space the glyph leaves — a `Text` in a flex row has no
- * intrinsic width to wrap against, so without that it lays out at its full
- * single-line length and runs straight out of the card.
+ * Wide enough for "Right stick", which is the longest thing that goes in it.
+ * Fixed rather than sized to content so every description shares a left edge —
+ * a ragged second column is what makes a table read as a list again.
  */
-function Line({ icon, children }: { icon: ReactNode; children: string }) {
+const CONTROL_COL = 132;
+
+/** One row: the control, then what it does. */
+function Row({ control, children }: { control: ReactNode; children: string }) {
   return (
     <Container
       flexDirection="row"
@@ -64,22 +64,28 @@ function Line({ icon, children }: { icon: ReactNode; children: string }) {
       justifyContent="flex-start"
       gap={SPACE.icon}
       width="100%"
+      // Keeps its height in the scrolling list.
       flexShrink={0}
     >
       <Container
-        width={GLYPH}
-        height={GLYPH}
+        width={CONTROL_COL}
         flexShrink={0}
+        flexDirection="row"
         alignItems="center"
-        justifyContent="center"
+        justifyContent="flex-start"
       >
-        {icon}
+        {control}
       </Container>
+      {/*
+        A `Text` in a flex row has no intrinsic width to wrap against, so
+        without `flexShrink` it lays out at its full single-line length and runs
+        straight out of the card.
+      */}
       <VRText
         flexGrow={1}
         flexShrink={1}
         fontSize={TEXT.body}
-        color={COLOR.text}
+        color={COLOR.muted}
       >
         {children}
       </VRText>
@@ -87,21 +93,40 @@ function Line({ icon, children }: { icon: ReactNode; children: string }) {
   );
 }
 
-/** A dock button, at the dock's own colour — same icon, same white, so the two
- *  read as the same control. */
-const glyph = (Icon: typeof HouseIcon) => (
-  <Icon width={GLYPH} height={GLYPH} color={COLOR.text} />
+/**
+ * A dock button, in its chip.
+ *
+ * The glyph keeps the dock's own white; the chip is the row's resting fill with
+ * a hairline, which is what the dock's discs look like on their glass. Drawn
+ * this way the row and the button are recognisably one thing.
+ */
+const button = (Icon: typeof HouseIcon) => (
+  <Container
+    width={CHIP}
+    height={CHIP}
+    flexShrink={0}
+    alignItems="center"
+    justifyContent="center"
+    borderRadius={RADIUS.dot}
+    backgroundColor={COLOR.rowRest}
+    borderWidth={1}
+    borderColor={COLOR.rowBorder}
+  >
+    <Icon width={GLYPH} height={GLYPH} color={COLOR.text} />
+  </Container>
 );
 
 /**
- * A CONTROLLER action, muted.
+ * A CONTROLLER action, named rather than drawn, in the accent.
  *
- * Deliberately not the buttons' white. A joystick is something in your hands;
- * the white glyphs are things on the dock you can point at. Drawn identically
- * they would read as more buttons, two of which do not exist.
+ * Deliberately not the buttons' white. A stick is something in your hands; the
+ * white glyphs are things on the dock you can point at, and drawn alike they
+ * would read as more buttons, two of which do not exist.
  */
-const input = (Icon: typeof JoystickIcon) => (
-  <Icon width={GLYPH} height={GLYPH} color={COLOR.muted} />
+const stick = (label: string) => (
+  <VRText fontSize={TEXT.body} color={COLOR.accentBright}>
+    {label}
+  </VRText>
 );
 
 export function InstructionsMenu({
@@ -127,23 +152,19 @@ export function InstructionsMenu({
   return (
     // A CEILING, NOT A HEIGHT — the card hugs its lines and only scrolls once
     // there are too many. The count genuinely varies: first person in the
-    // stadium is nine lines, the doll house in the hotel room is five, and a
+    // stadium is nine rows, the doll house in the hotel room is five, and a
     // fixed height sized for the longest leaves the shortest with a third of
     // its card empty. A panel with a hole in the bottom of it reads as
     // something that failed to load.
-    //
-    // Higher than the 46% default, for the opposite reason that default is low:
-    // this is not a list you scroll but a set of lines you read once, so the
-    // right outcome is that they all fit and no bar is drawn.
     <VRPanel maxHeight="62%" onDismiss={onDismiss}>
       {/*
         A CENTRED TITLE, not the shared `PanelHeader`. That component is a row —
         title left, close disc right — and this is the one panel with no close
-        button, since `Enter` dismisses it. Left-aligning a title against
-        nothing just leaves a hole where the disc would be.
+        button, since the dismiss below does the job. Left-aligning a title
+        against nothing just leaves a hole where the disc would be.
 
         It also NAMES THE VIEW. Both sets of instructions are the same card in
-        the same place and only the lines differ, so without this there is
+        the same place and only the rows differ, so without this there is
         nothing to say which of the two you are reading — or that the other one
         exists.
       */}
@@ -157,9 +178,7 @@ export function InstructionsMenu({
         gapRow={4}
       >
         <VRText fontSize={TEXT.heading} color={COLOR.text} textAlign="center">
-          {isFirstPerson
-            ? "First Person View Instructions"
-            : "Doll House View Instructions"}
+          {isFirstPerson ? "Walking the venue" : "The model"}
         </VRText>
         <VRText fontSize={TEXT.label} color={COLOR.muted} textAlign="center">
           {venue.title}
@@ -169,92 +188,58 @@ export function InstructionsMenu({
       <PanelList align="flex-start">
         {isFirstPerson ? (
           <>
-            <Line icon={input(JoystickIcon)}>
-              Push the Left Thumbstick to walk in the direction you are looking
-            </Line>
-            <Line icon={input(JoystickIcon)}>
-              Push the Right Thumbstick to turn left/right
-            </Line>
-            <Line icon={input(CrosshairIcon)}>
-              Point at a Marker and press the Trigger to open it
-            </Line>
+            <Row control={stick("Left stick")}>Walk</Row>
+            <Row control={stick("Right stick")}>Turn on the spot</Row>
+            <Row control={stick("Trigger")}>Press what you point at</Row>
           </>
         ) : (
           <>
             {/* Left rotates, right points — the same division of labour as
                 first person, and the reason the right stick is not mentioned
                 here is that it deliberately does nothing in this view. */}
-            <Line icon={input(JoystickIcon)}>
-              Push the Left Thumbstick to rotate the model and look at it from
-              different angles
-            </Line>
-            <Line icon={input(CrosshairIcon)}>
-              Point at the Model and press the Trigger to go to First Person
-              View
-            </Line>
+            <Row control={stick("Left stick")}>Spin the model round</Row>
+            <Row control={stick("Trigger")}>Step inside, in first person</Row>
           </>
         )}
 
-        {/* No heading over these. The glyphs are the same ones on screen at the
-            bottom of the view, which says "these are those" without a row of
-            type to say it. */}
-        <Line icon={glyph(HouseIcon)}>
-          {isFirstPerson
-            ? "Click on the Home Button to reset the view to the starting position"
-            : "Click on the Home Button to re-frame the model"}
-        </Line>
+        {/* No heading over these. The chips are the same glyphs on screen at
+            the bottom of the view, which says "these are those" without a row
+            of type to say it. */}
+        <Row control={button(HouseIcon)}>
+          {isFirstPerson ? "Back to where you started" : "Re-frame the model"}
+        </Row>
 
         {isFirstPerson && hasPlaces && (
-          <Line icon={glyph(MapPinIcon)}>
-            Click on the Layouts Button to travel to a saved viewpoint
-          </Line>
+          <Row control={button(MapPinIcon)}>Travel to a saved viewpoint</Row>
         )}
 
         {isFirstPerson && hasResources && (
-          <Line icon={glyph(LayersIcon)}>
-            Click on the Resources Button to find a location and travel to it —
-            markers only appear this way
-          </Line>
+          <Row control={button(LayersIcon)}>
+            Find a place — markers only appear this way
+          </Row>
         )}
 
         {isFirstPerson && (
-          <Line icon={glyph(BoxIcon)}>
-            Click on the Doll House Button to go back to Doll House View
-          </Line>
+          <Row control={button(BoxIcon)}>See the whole venue on a table</Row>
         )}
 
         {hasVenues && (
-          <Line icon={glyph(BuildingIcon)}>
-            Click on the Venues Button to move to another venue without leaving
-            VR
-          </Line>
+          <Row control={button(BuildingIcon)}>Move to another venue</Row>
         )}
 
-        <Line icon={glyph(InfoIcon)}>
-          Click on the Info Button to show these instructions again
-        </Line>
-        <Line icon={glyph(LogOutIcon)}>
-          Click on the Exit Button to leave VR
-        </Line>
+        <Row control={button(InfoIcon)}>Show this again</Row>
+        <Row control={button(LogOutIcon)}>Leave VR</Row>
       </PanelList>
 
-      <Container
-        width="100%"
-        flexShrink={0}
-        justifyContent="center"
-        alignItems="center"
-      >
-        {/*
-          Named for the view you are entering, as the flat overlay names its
-          own button ("Enter Doll House View"). A bare "Enter" is ambiguous on
-          a panel that can be either of two sets — and the flat site is the
-          voice this whole panel follows.
-        */}
+      {/*
+        FULL WIDTH, as the reference panel has it — see `PrimaryButton`'s
+        `fullWidth` for why that is the right call on this one panel.
+      */}
+      <Container width="100%" flexShrink={0}>
         <PrimaryButton
-          label={
-            isFirstPerson ? "Enter First Person View" : "Enter Doll House View"
-          }
+          label={isFirstPerson ? "Start walking" : "Start exploring"}
           onSelect={onDismiss}
+          fullWidth
         />
       </Container>
     </VRPanel>

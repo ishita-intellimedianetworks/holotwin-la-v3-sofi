@@ -1,6 +1,7 @@
 "use client";
 
 import { useVenueContext } from "@/components/vr/data/venue-provider";
+import { useVenueLoad } from "../load-progress";
 import { useVRState } from "../state";
 import { LayoutsMenu } from "./layouts";
 import { InstructionsMenu } from "./instructions";
@@ -24,8 +25,25 @@ export function VRMenus() {
   } = useVRState();
 
   const { venue, venueId, setVenue } = useVenueContext();
+  const { ready } = useVenueLoad();
 
   const close = () => setOpenMenu(null);
+
+  /**
+   * NOTHING IS DRAWN UNTIL THE VENUE IS.
+   *
+   * `openMenu` starts on "instructions" — the panel is how a first-time visitor
+   * learns which stick walks — and that initial value is live from the first
+   * frame, which is several seconds before the model has decoded. The
+   * instructions panel and the loading panel are both centred in front of the
+   * face, so both were drawn, overlapping, and the one that says "please wait"
+   * was behind the one that says "press the left stick to walk".
+   *
+   * Held rather than cancelled: the menu is still open, so it appears the
+   * moment the venue is ready, which is when it can be acted on anyway. The
+   * dock is gated on the same signal — see `../toolbar`.
+   */
+  if (!ready) return null;
 
   /**
    * First-person-only panels are gated on the view too. The dock already hides

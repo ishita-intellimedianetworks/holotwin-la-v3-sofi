@@ -72,6 +72,16 @@ interface WalkGrid {
 const walkGrids = new WeakMap<THREE.Mesh, WalkGrid>();
 
 /**
+ * How far apart two navmesh surfaces have to be before they count as different
+ * STOREYS rather than the same floor sampled twice.
+ *
+ * Two and a half metres: taller than any step, ramp or tier edge in these
+ * venues, and shorter than the gap between a concourse and the deck above it.
+ * Used to keep a level-aware search from wandering onto another floor.
+ */
+export const LEVEL_HEIGHT = 2.5;
+
+/**
  * Point-in-triangle by edge sign. The three cross products share a sign inside
  * the triangle whatever the winding, which matters because navmesh winding is
  * not dependable. A point exactly on an edge gives zero and counts as inside,
@@ -193,14 +203,17 @@ function buildWalkGrid(positions: Float32Array): WalkGrid | null {
 }
 
 /**
- * Is the column at (x, z) over the navmesh?
+ * Is the column at (x, z) over the navmesh, ON ANY LEVEL?
  *
  * PURELY 2D, so someone on a stadium concourse and someone on the field below
- * get the same answer. That is a deliberate simplification and it is safe here
- * because the navmeshes are authored as the walkable surface of ONE level at a
- * time; where they do stack — the memorial's tiers — the levels are reached by
- * travelling to a layout rather than by walking up, and the glide sets the
- * height explicitly.
+ * get the same answer. That was once the walkable test and it is not any more,
+ * because the assumption it rested on — that a navmesh describes ONE level —
+ * is false for three of the four venues: the stadium stacks a pitch, several
+ * concourses and a deck over the same footprint, and the union of those is
+ * walkable almost everywhere, including out over a forty-metre drop.
+ *
+ * `stepFloor` is what a walk asks now. This survives for the questions that
+ * really are about the footprint rather than a storey.
  *
  * EXACT, with no tolerance. Widening it to paper over gaps in a rough navmesh
  * grows the walkable region OUTWARD too, which turns the cut-outs around
@@ -242,37 +255,21 @@ export function isWalkable(navmesh: THREE.Mesh, x: number, z: number): boolean {
 }
 
 /**
- * The height of the walkable floor at (x, z), or null if there is none there.
+ * One shared floor sample. `floorAt` and `stepFloor` differ only in the band
+ * they will accept, so the barycentric maths lives here once.
  *
- * THIS IS WHAT STOPS WALKING FEELING LIKE FLYING. Locomotion deliberately never
- * writes the player's Y from the thumbstick — the walkable test is 2D, so a
- * step is only ever accepted or refused in XZ. On a single flat floor that is
- * correct and costs nothing. These venues are not flat: the memorial navmesh
- * spans 33 m of tiers and the stadium 66 m of bowl, with ramps and steps
- * throughout. Holding Y at whatever the spawn was means walking up a ramp
- * leaves the player at the old height, sailing over the geometry.
- *
- * The navmesh IS the floor, so its surface is the answer. The triangle under
- * the player is found from the same grid `isWalkable` uses, and the height is
- * interpolated across it barycentrically — the plane of the triangle, not the
- * nearest vertex, so a ramp reads as a smooth slope instead of a staircase.
- *
- * `preferY` DISAMBIGUATES LEVELS, and it is the whole reason this takes a hint
- * at all. A multi-storey navmesh has several triangles stacked over the same
- * (x, z) — a stadium concourse has the pitch below it and a deck above — and
- * "the floor here" has no single answer. The one nearest the height the player
- * is already at is the one they are standing on. Without the hint, crossing
- * under a walkway would drop them to the pitch.
+ * Returns the height of the walkable surface at (x, z) that is NEAREST to
+ * `preferY` and within [`preferY` - maxDrop, `preferY` + maxRise], or null if
+ * no triangle covers the point inside that band.
  */
-export function floorAt(
-  navmesh: THREE.Mesh,
+function sampleFloor(
+  grid: WalkGrid,
   x: number,
   z: number,
   preferY: number,
+  maxRise: number,
+  maxDrop: number,
 ): number | null {
-  const grid = walkGrids.get(navmesh);
-  if (!grid) return null;
-
   const xi = Math.floor((x - grid.minX) / grid.cell);
   const zi = Math.floor((z - grid.minZ) / grid.cell);
   if (xi < 0 || zi < 0 || xi >= grid.cols || zi >= grid.rows) return null;
@@ -309,7 +306,13 @@ export function floorAt(
     const height =
       w1 * grid.triY[y] + w2 * grid.triY[y + 1] + w3 * grid.triY[y + 2];
 
-    const distance = Math.abs(height - preferY);
+    // THE BAND IS WHAT MAKES A LEVEL A LEVEL. A concourse and the pitch under
+    // it are both "the floor at (x, z)"; only one of them is a floor you could
+    // have got to from where you are standing.
+    const rise = height - preferY;
+    if (rise > maxRise || -rise > maxDrop) continue;
+
+    const distance = Math.abs(rise);
     if (distance < bestDistance) {
       bestDistance = distance;
       best = height;
@@ -320,31 +323,130 @@ export function floorAt(
 }
 
 /**
- * The nearest triangle centroid to (x, z), ignoring height, or null if there
- * are none.
+ * The height of the walkable floor at (x, z), or null if there is none there.
  *
- * Two callers want this: landing a player whose spawn is off the mesh, and
- * letting one who has physically walked off it walk back.
+ * THIS IS WHAT STOPS WALKING FEELING LIKE FLYING. Locomotion deliberately never
+ * writes the player's Y from the thumbstick — the walkable test is 2D, so a
+ * step is only ever accepted or refused in XZ. On a single flat floor that is
+ * correct and costs nothing. These venues are not flat: the memorial navmesh
+ * spans 33 m of tiers and the stadium 66 m of bowl, with ramps and steps
+ * throughout. Holding Y at whatever the spawn was means walking up a ramp
+ * leaves the player at the old height, sailing over the geometry.
+ *
+ * The navmesh IS the floor, so its surface is the answer. The triangle under
+ * the player is found from the same grid `isWalkable` uses, and the height is
+ * interpolated across it barycentrically — the plane of the triangle, not the
+ * nearest vertex, so a ramp reads as a smooth slope instead of a staircase.
+ *
+ * `preferY` DISAMBIGUATES LEVELS, and it is the whole reason this takes a hint
+ * at all. A multi-storey navmesh has several triangles stacked over the same
+ * (x, z) — a stadium concourse has the pitch below it and a deck above — and
+ * "the floor here" has no single answer. The one nearest the height the player
+ * is already at is the one they are standing on. Without the hint, crossing
+ * under a walkway would drop them to the pitch.
+ *
+ * UNBOUNDED, so this answers "which storey is meant by this height?" — an
+ * authored viewpoint whose Y is an EYE height lands on the floor a metre and a
+ * half below it, which is the right answer. Use `stepFloor` for the other
+ * question, "may I step there from here?", where an unbounded answer is exactly
+ * the bug: it would happily hand back a deck 40 m down.
+ */
+export function floorAt(
+  navmesh: THREE.Mesh,
+  x: number,
+  z: number,
+  preferY: number,
+): number | null {
+  const grid = walkGrids.get(navmesh);
+  if (!grid) return null;
+  return sampleFloor(grid, x, z, preferY, Infinity, Infinity);
+}
+
+/**
+ * The floor a player standing at `fromY` may step onto at (x, z), or null.
+ *
+ * THIS IS THE WALKABLE TEST NOW, and `isWalkable` is not, because "is there
+ * navmesh over this column?" is the union of every storey. On a single-level
+ * venue the two are the same question. On the stadium they are not: the bowl,
+ * every concourse and the pitch stack over the same footprint, so the 2D test
+ * says yes to a step off a Level 3 gate into the open air above the field —
+ * and `floorAt` then reports the pitch, 40 m down, which the old caller
+ * rejected as too big a drop and so held the player's height where it was.
+ * The result was walking out over the void at concourse height.
+ *
+ * Asking for a floor WITHIN A STEP of the one you are on collapses both bugs
+ * into one rule. A step is a few centimetres at walking speed, so the only way
+ * onto another level is a surface that actually connects to this one — a ramp,
+ * a stair, a tier — and a gap between decks can never be crossed, because
+ * there is no intermediate height to pass through.
+ *
+ * `maxRise` and `maxDrop` are separate: a kerb you can step up is smaller than
+ * a step you can drop down, and navmesh seams at a tier edge are drops.
+ */
+export function stepFloor(
+  navmesh: THREE.Mesh,
+  x: number,
+  z: number,
+  fromY: number,
+  maxRise: number,
+  maxDrop: number,
+): number | null {
+  const grid = walkGrids.get(navmesh);
+  // No grid means no geometry to test against — unbounded rather than frozen,
+  // matching `isWalkable`. The caller keeps its current height.
+  if (!grid) return fromY;
+  return sampleFloor(grid, x, z, fromY, maxRise, maxDrop);
+}
+
+/**
+ * The nearest triangle centroid to (x, z), measured in XZ only, or null if
+ * there are none.
+ *
+ * Three callers want this: landing a player whose spawn is off the mesh,
+ * snapping a teleport target that misses it, and letting a player who has
+ * physically walked off it walk back.
+ *
+ * `preferY` KEEPS THE ANSWER ON ONE LEVEL. Without it "nearest" is decided by
+ * ground plan alone, so the closest triangle to a Level 3 gate that sits a
+ * fraction off the mesh is very often the pitch directly below it — and the
+ * player is relocated a storey down while the code believes it corrected a
+ * rounding error. Passing the height they are meant to be at limits the search
+ * to that storey; if nothing on it qualifies the search widens rather than
+ * returning nothing, because being relocated to the wrong floor is still
+ * better than being frozen off the mesh entirely.
  */
 export function nearestCentroid(
   centroids: THREE.Vector3[],
   x: number,
   z: number,
+  preferY?: number,
+  maxDelta = LEVEL_HEIGHT,
 ): THREE.Vector3 | null {
   let nearest: THREE.Vector3 | null = null;
   let best = Infinity;
+  /** Best ignoring the level filter — the fallback when the level has none. */
+  let anywhere: THREE.Vector3 | null = null;
+  let bestAnywhere = Infinity;
 
   for (const c of centroids) {
     const dx = c.x - x;
     const dz = c.z - z;
     const dSq = dx * dx + dz * dz;
+
+    if (dSq < bestAnywhere) {
+      bestAnywhere = dSq;
+      anywhere = c;
+    }
+
+    if (preferY != null && Math.abs(c.y - preferY) > maxDelta) continue;
+
     if (dSq < best) {
       best = dSq;
       nearest = c;
     }
   }
 
-  return nearest;
+  return nearest ?? anywhere;
 }
 
 /**

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "bake": "node scripts/holotwin-bake.cjs",
-    "vr:check": "node scripts/vr-model-check.mjs"
+    "vr:check": "node scripts/vr-model-check.mjs",
+    "vr:optimize": "node scripts/vr-model-optimize.mjs"
   },
   "dependencies": {
     "@preact/signals-core": "^1.14.4",
@@ -39,14 +40,19 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.4.2",
+    "@gltf-transform/extensions": "^4.4.2",
+    "@gltf-transform/functions": "^4.4.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.184.1",
+    "draco3dgltf": "^1.5.7",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "raw-loader": "^4.0.2",
+    "sharp": "^0.35.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

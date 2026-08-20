@@ -36,6 +36,40 @@
       "that preview is the only picture some people will ever see of a venue."
     ],
 
+    "//groundOffset": [
+      "Metres added to every navmesh height reading. NORMALLY 0, and it should",
+      "stay that way: a headset measures standing height from the XR origin",
+      "itself, so the origin belongs ON the floor and adding a person's height",
+      "here would put their eyes through the ceiling. cameraHeight below is",
+      "that other number and is not used to place anyone.",
+      "",
+      "This is for a navmesh baked at the WRONG DATUM — exported at eye level,",
+      "or floating a hand's width over the geometry it describes. That is a",
+      "fact about the asset which no code can infer, and it is authored here",
+      "rather than compensated for at one call site, because the spawn, a",
+      "teleport landing and every step of a walk all read the same surface and",
+      "must agree about how high it is."
+    ],
+    "//far": [
+      "The camera's far plane in metres, per venue, and it reaches the HEADSET:",
+      "three copies the camera's near and far onto the session as depthNear and",
+      "depthFar, so an unstated one is not a preview detail, it is the distance",
+      "at which the building stops being drawn. R3F's default camera is 1000 m",
+      "and the memorial is 1274 m corner to corner, so the far stand simply was",
+      "not there.",
+      "",
+      "Sized to each model and no further. The depth buffer's precision is",
+      "spread across near..far, and spending it on emptiness is what lets two",
+      "coplanar surfaces fight and a floor read as see-through. Measured world",
+      "spans, from the GLB accessors:",
+      "",
+      "  village   191 x 27 x 218 m    290 m diagonal   -> 400",
+      "  memorial  813 x 58 x 981 m   1274 m diagonal   -> 1500",
+      "  stadium   656 x 97 x 578 m    873 m diagonal   -> 1200",
+      "  hotel      4 x 2.7 x 6.2 m      7.3 m diagonal ->   60",
+      "",
+      "Re-measure with `npm run vr:check` if a model is replaced."
+    ],
     "//cameraHeight": [
       "NOT added to the XR origin. A headset reports the wearer's real standing",
       "height, so adding an authored eye height on top puts their head through",
@@ -83,6 +117,9 @@
 
   "venues": {
     "village": {
+      "//model": "Rebuilt for VR by `npm run vr:optimize`: 302 draws to 77 and 1,270k triangles to 578k. Simplified, so re-judge the ratio in a headset. The flat site keeps olympic-village-v3.glb.",
+      "model": "/models/olympic-village-v3-vr.1cae7c95.glb",
+      "far": 400,
       "cameraHeight": 1.828,
       "firstPerson": {
         "position": [22.1736, 0, 13.0198],
@@ -92,6 +129,7 @@
     },
 
     "hotel-room": {
+      "far": 60,
       "//hidden": [
         "NOT LISTED IN VR. It stays in scenes.json and the flat site still",
         "shows it — this is a VR-only decision, which is what this file is for.",
@@ -114,6 +152,8 @@
     },
 
     "memorial": {
+      "//model": "DELIBERATELY ABSENT. VR loads the same memorial-v4.glb the flat site does. The rebuilt copy was structurally lossless — identical triangles, material for material — but it is not what is wanted here, so this venue opts out and takes the 2,471 draw calls that come with it. There is no recipe for it in vr-model-optimize.mjs either, so `npm run vr:optimize` cannot quietly put one back.",
+      "far": 1500,
       "cameraHeight": 1.5,
       "//firstPerson": "y is the authored concourse height. The navmesh spans 33 m of tiers, so its lowest point is NOT this floor — see the note in experience/session.",
       "firstPerson": {
@@ -125,6 +165,9 @@
     },
 
     "stadium": {
+      "//model": "Rebuilt for VR by `npm run vr:optimize`: 228 draws to 145 and 1,143k triangles to 685k. This one IS simplified, so re-judge the ratio in a headset before trusting it. The flat site keeps sofi-stadium-v5-web.glb.",
+      "model": "/models/stadium/sofi-stadium-v5-web-vr.59953814.glb",
+      "far": 1200,
       "//cameraHeight": "Not authored flat either; the default stands.",
       "//firstPerson": "y is the Gate 1 concourse, 40 m above the pitch the navmesh bottoms out at.",
       "firstPerson": {

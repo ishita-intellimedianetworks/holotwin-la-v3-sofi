@@ -5,8 +5,10 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useVenue } from "@/components/vr/data/venue-provider";
 import {
-  isWalkable,
+  LEVEL_HEIGHT,
+  floorAt,
   nearestCentroid,
+  stepFloor,
   useNavmeshCollider,
 } from "@/components/vr/hooks/use-navmesh-collider";
 import { useVRState } from "../state";
@@ -52,7 +54,8 @@ interface Trip {
 }
 
 export function TeleportDriver() {
-  const { originRef, moveToLocation, finishTeleport } = useVRState();
+  const { originRef, moveToLocation, finishTeleport, standingLiftRef } =
+    useVRState();
   const camera = useThree((state) => state.camera);
   const trip = useRef<Trip | null>(null);
 
@@ -77,7 +80,9 @@ export function TeleportDriver() {
    */
   const { collider, centroids } = useNavmeshCollider();
 
-  const seconds = useVenue().locomotion.teleportSeconds;
+  const venue = useVenue();
+  const seconds = venue.locomotion.teleportSeconds;
+  const groundOffset = venue.groundOffset;
 
   /** Identity, not value: `teleportTo` makes a new object every call, so the
    *  same layout chosen twice is still a new trip. */
@@ -115,37 +120,78 @@ export function TeleportDriver() {
       const sin = Math.sin(deltaYaw);
 
       /**
-       * THE TARGET'S HEIGHT IF IT HAS ONE, otherwise the height we are already
-       * at.
+       * THE AUTHORED HEIGHT PICKS THE STOREY. IT IS NOT THE LANDING HEIGHT.
        *
-       * Both readings are needed, because `scenes.json` uses both conventions.
-       * The village authors every POI camera at `y: 0` — its ground is flat and
-       * the flat player supplies the height from the navmesh — so taking 0
-       * literally would sink the player into the floor. The stadium and the
-       * memorial do the opposite: their cameras carry real elevations (49.2 at
-       * the gates, 12.1 at a Level 1 seat, 4.3 on the memorial concourse) and
-       * ignoring them would put a player who asked for a seat in the upper
-       * bowl down on the pitch instead, underneath the floor they asked to
-       * stand on.
+       * It used to be, and that is what made a glide land at one height and
+       * then sink the moment the stick was touched. `scenes.json`'s POI cameras
+       * are EYE positions authored for the flat player — 49.2 m at a stadium
+       * gate whose floor is 47.8 — so setting the XR origin to 49.2 puts the
+       * origin, which is the player's FEET, where their eyes should be, and
+       * their actual eyes a further standing height above that. Locomotion then
+       * samples the navmesh on the first frame of the first step and eases the
+       * origin down to 47.8. Same place, two heights, and the correction is
+       * felt as the floor dropping away underfoot.
        *
-       * So 0 keeps its meaning of "unspecified, stay where you are", and a real
-       * value is honoured. The flat viewer reads this same column the same way.
+       * So the authored value is used for the ONE thing it can be trusted for:
+       * saying which of the storeys stacked over this (x, z) was meant. The
+       * height itself comes from the navmesh, which is the surface the player
+       * will stand on and the same number locomotion will read a frame later.
+       * The two cannot disagree any more, because there is only one of them.
+       *
+       * Both `scenes.json` conventions still work. The village authors every
+       * camera at `y: 0` on flat ground — that means "unspecified", so the
+       * storey hint is the height we are already at. The stadium and memorial
+       * carry real elevations and those select a deck.
        */
       const targetY = moveToLocation.position[1];
-      const toY = Math.abs(targetY) > 1e-3 ? targetY : origin.position.y;
+      const hintY =
+        Math.abs(targetY) > 1e-3
+          ? targetY
+          : origin.position.y - groundOffset - standingLiftRef.current;
 
-      // Snap X/Z onto the navmesh. Height is left alone: it is either the
-      // authored storey or the one we are already on, and the nearest triangle
-      // may belong to a different level entirely.
+      /**
+       * SNAP ONTO THE STOREY THE HINT NAMES, not merely onto the footprint.
+       *
+       * The 2D question — is there navmesh over this column? — passes for the
+       * four stadium Event Updates, which are notices pinned 15.9 m out in the
+       * air above the pitch: there IS navmesh under them, it is just the pitch.
+       * Nothing would be snapped and the player would be set down on the field
+       * instead of at the notice. Asking for a floor near the authored height
+       * catches those the same way it catches the two gates that miss the mesh
+       * by 20 and 30 cm.
+       */
       let toX = moveToLocation.position[0];
       let toZ = moveToLocation.position[2];
-      if (collider && !isWalkable(collider, toX, toZ)) {
-        const near = nearestCentroid(centroids, toX, toZ);
+      let ground = collider
+        ? stepFloor(collider, toX, toZ, hintY, LEVEL_HEIGHT, LEVEL_HEIGHT)
+        : null;
+
+      if (collider && ground == null) {
+        const near = nearestCentroid(centroids, toX, toZ, hintY);
         if (near) {
           toX = near.x;
           toZ = near.z;
+          // Unbounded here: the centroid IS the storey now, so the only job
+          // left is reading the surface height across its triangle.
+          ground = floorAt(collider, toX, toZ, near.y) ?? near.y;
         }
       }
+
+      /**
+       * The floor, plus the venue's offset if one is authored.
+       *
+       * `groundOffset` is normally 0 and should stay that way: a headset
+       * supplies standing height itself, measured from the XR origin, so the
+       * origin belongs ON the floor. The knob exists for a navmesh baked at the
+       * wrong datum — a mesh authored at eye height, or one floating a hand's
+       * width over the geometry it describes — which is an asset fact no code
+       * can infer. See `vr-scenes.json`.
+       *
+       * No floor found at all — a venue whose navmesh has not loaded — leaves
+       * the hint standing, which is the old behaviour and the best guess
+       * available.
+       */
+      const toY = (ground ?? hintY) + groundOffset + standingLiftRef.current;
 
       trip.current = {
         fromPos: origin.position.clone(),

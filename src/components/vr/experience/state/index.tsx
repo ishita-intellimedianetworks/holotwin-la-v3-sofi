@@ -81,12 +81,39 @@ interface VRStateValue {
   /** Bumped to re-run the venue's landing pose. */
   landToken: number;
   recentre: () => void;
+
+  /**
+   * Metres to add to the navmesh floor because the RUNTIME IS NOT SUPPLYING A
+   * STANDING HEIGHT. Zero on any headset that is tracking properly.
+   *
+   * THE FLOOR IS THE ONLY THING THIS PROJECT MEASURES, and that is correct: the
+   * XR origin is the player's feet and a headset in a `local-floor` reference
+   * space puts their head wherever their head actually is, so the venue's
+   * `eyeHeight` must never be added — doing so is what would put someone's eyes
+   * through the ceiling.
+   *
+   * It is only correct while the head pose is real. Where floor-level tracking
+   * is unavailable — a runtime that fell back to `local`, a browser emulator,
+   * a headset that never got a floor estimate — the head arrives at or near the
+   * origin, so feet-on-the-floor puts the VIEW on the floor. Ankle height, in a
+   * venue whose viewpoints were authored for someone standing.
+   *
+   * So this is measured rather than configured: `locomotion` watches how far
+   * the head sits above the origin, and only if that is implausibly small does
+   * it fill the gap from the venue's `eyeHeight`. A ref rather than state
+   * because it is written and read inside the frame loop, and because a change
+   * must not re-render the tree that is reading it.
+   */
+  standingLiftRef: RefObject<number>;
 }
 
 const VRStateContext = createContext<VRStateValue | null>(null);
 
 export function VRStateProvider({ children }: PropsWithChildren) {
   const originRef = useRef<THREE.Group | null>(null);
+  /** See `standingLiftRef` above. Written by `../locomotion`, read by everything
+   *  that puts the player down on a floor. */
+  const standingLiftRef = useRef(0);
 
   const [view, setView] = useState<VRView>("doll-house");
   /**
@@ -181,6 +208,7 @@ export function VRStateProvider({ children }: PropsWithChildren) {
       panelIsOpen: openMenu !== null || openHotspot !== null,
       landToken,
       recentre,
+      standingLiftRef,
     }),
     [
       view,

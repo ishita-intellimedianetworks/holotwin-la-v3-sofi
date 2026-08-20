@@ -12,6 +12,7 @@ import {
 import type { XRStore } from "@react-three/xr";
 import { VENUES } from "@/components/vr/data";
 import { useVenue } from "@/components/vr/data/venue-provider";
+import { useVenueLoad } from "../load-progress";
 import { useVRState } from "../state";
 import { VRFullscreen } from "../ui/fullscreen";
 import { GlassSurface } from "../ui/glass-surface";
@@ -124,7 +125,22 @@ export function VRToolbar({ store }: { store: XRStore }) {
    * it off screen without touching the tree, and dropping `pointerEvents` takes
    * it off the ray, which is the half that matters.
    */
-  const hidden = panelIsOpen || isTravelling;
+  /**
+   * AND NOT WHILE THE VENUE IS STILL LOADING.
+   *
+   * The dock is not suspended by the venue swap — it sits outside that boundary
+   * on purpose, so that opening a menu never waits on a model — which meant it
+   * stayed live, and rayable, in front of the loading panel. Pressing a venue
+   * or a layout there acts on a scene that does not exist yet: the press lands,
+   * the panel it opens draws over the loading panel, and two things that each
+   * think they own the view are drawn on top of each other.
+   *
+   * `ready` is the same signal the loading panel and the gate's bar read, so
+   * the dock comes back at the same moment the venue does.
+   */
+  const { ready } = useVenueLoad();
+
+  const hidden = panelIsOpen || isTravelling || !ready;
 
   const isFirstPerson = view === "first-person";
 

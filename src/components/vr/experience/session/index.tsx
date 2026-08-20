@@ -27,7 +27,7 @@ import { VRToolbar } from "../toolbar";
  * resolves, so an unboundaried suspension blanks the WHOLE canvas.
  */
 function Walkable({ debug }: { debug: boolean }) {
-  const { originRef, landToken, isTravelling } = useVRState();
+  const { originRef, landToken, isTravelling, standingLiftRef } = useVRState();
   const { collider, centroids } = useNavmeshCollider();
   const venue = useVenue();
 
@@ -63,7 +63,12 @@ function Walkable({ debug }: { debug: boolean }) {
   const spawn = {
     // A floor position, NOT an eye position — the headset adds standing height
     // on top of the XR origin, so adding `eyeHeight` here would stack the two.
-    position: [sx, floorY, sz] as [number, number, number],
+    //
+    // `groundOffset` is a different thing and is normally 0: it corrects a
+    // navmesh baked at the wrong datum, and it is added here, at a teleport
+    // landing and on every step, so those three can never settle at different
+    // heights over the same piece of floor. See `data`.
+    position: [sx, floorY + venue.groundOffset, sz] as [number, number, number],
     rotationY: venue.spawn.rotationY,
   };
 
@@ -77,6 +82,9 @@ function Walkable({ debug }: { debug: boolean }) {
         landToken={landToken}
         moveSpeed={venue.locomotion.moveSpeed}
         turnSpeed={venue.locomotion.turnSpeed}
+        groundOffset={venue.groundOffset}
+        eyeHeight={venue.eyeHeight}
+        standingLiftRef={standingLiftRef}
         isTravelling={() => isTravelling}
       />
 
