@@ -8,6 +8,7 @@ import {
   InfoIcon,
   LayoutGridIcon,
   LogOutIcon,
+  MapIcon,
 } from "@react-three/uikit-lucide";
 import type { XRStore } from "@react-three/xr";
 import { VENUES } from "@/components/vr/data";
@@ -202,9 +203,26 @@ export function VRToolbar({ store }: { store: XRStore }) {
             venue.layouts.length + venue.hotspots.length > 0 && (
               <IconButton
                 icon={glyph(LayoutGridIcon)}
-                onSelect={() => setOpenMenu("layouts")}
+                onSelect={() => setOpenMenu("destinations")}
               />
             )}
+
+          {/*
+            The floor plan. Gated on the venue having one — the hotel room does
+            not, and three metres of carpet does not need a map of itself.
+
+            NOT folded into the sheet as a seventh category, though everything
+            else was. A plan is a different question from a list: the list
+            answers "what is here", the plan answers "where am I", and the
+            second one is worth a press of its own because it is what you reach
+            for when you are lost rather than when you are choosing.
+          */}
+          {isFirstPerson && !!venue.floorPlan && (
+            <IconButton
+              icon={glyph(MapIcon)}
+              onSelect={() => setOpenMenu("map")}
+            />
+          )}
 
           {isFirstPerson && (
             <IconButton icon={glyph(BoxIcon)} onSelect={goToDollHouse} />

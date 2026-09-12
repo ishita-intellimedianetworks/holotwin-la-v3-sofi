@@ -19,6 +19,7 @@ import type { RefObject } from "react";
 import { cn } from "@/lib/utils";
 import { Ban, CalendarClock, DoorClosed, Megaphone, ShieldAlert, Trophy, type LucideIcon } from "lucide-react";
 import type { Destination, DestinationCategory, DestinationsByCategory } from "@/components-v5/shared/types";
+import { noticeKind, postedAtTime, type NoticeKindKey } from "@/components-v5/shared/notice-kind";
 import type { PlayerControllerHandle } from "../../scene-content/components/player-controller";
 import { CATEGORY_BY_KEY } from "./category-meta";
 import { CROWD_DOT } from "./destination-card";
@@ -52,31 +53,25 @@ const VARIANT_META: Record<InfoVariant, { tag: string; accent: string; empty: st
 // copy here once used amber (#FF9F0A) for "med" while everything else used
 // #ffd60a — two different yellows on screen at once.
 
-/** Event-update TYPE (Destination.option) → icon + colour, so each notice reads at a
- *  glance instead of every card carrying the same red dot. First keyword match
- *  wins; falls back to a megaphone in the variant accent. */
-const UPDATE_KINDS: [RegExp, { icon: LucideIcon; color: string }][] = [
-  [/clos/i,               { icon: DoorClosed,    color: "#ffd60a" }],
-  [/security|checkpoint/i,{ icon: ShieldAlert,   color: "#2997FF" }],
-  [/schedule|time/i,      { icon: CalendarClock, color: "#BF5AF2" }],
-  [/restrict/i,           { icon: Ban,           color: "#FF453A" }],
-  [/event|session|ceremon|medal/i, { icon: Trophy, color: "#30D158" }],
-];
+/** Notice kind → the lucide glyph for it.
+ *
+ *  THE CLASSIFICATION ITSELF LIVES IN `shared/notice-kind.ts` — which keyword
+ *  matches which kind, and what colour it gets — so the VR notices panel sorts
+ *  a closure into the same bucket this one does. What stays here is only the
+ *  icon set, because these are React-DOM components and VR draws from
+ *  `@react-three/uikit-lucide` instead. */
+const KIND_GLYPH: Record<NoticeKindKey, LucideIcon> = {
+  closure: DoorClosed,
+  security: ShieldAlert,
+  schedule: CalendarClock,
+  restriction: Ban,
+  event: Trophy,
+  default: Megaphone,
+};
 
 function updateKind(option: string | undefined, fallback: string): { icon: LucideIcon; color: string } {
-  for (const [re, kind] of UPDATE_KINDS) if (option && re.test(option)) return kind;
-  return { icon: Megaphone, color: fallback };
-}
-
-/** Event Updates are always "today's" notices: the panel header carries the
- *  CURRENT date and each notice a posted-at time. The time is pseudo-random —
- *  hashed from the notice id so it's stable across re-renders (no shuffling)
- *  but reads like a live feed. Range 08:00–19:59. */
-function postedAtTime(id: string): string {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
-  const mins = 8 * 60 + (Math.abs(h) % (12 * 60));
-  return `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, "0")}`;
+  const { key, color } = noticeKind(option, fallback);
+  return { icon: KIND_GLYPH[key], color };
 }
 
 export function InfoOverlay({ dests, category, visible, onClose, onTeleport, variant }: InfoOverlayProps) {

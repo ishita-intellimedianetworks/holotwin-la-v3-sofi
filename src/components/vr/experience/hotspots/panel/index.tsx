@@ -5,8 +5,9 @@ import type { VRHotspot } from "@/components/vr/data";
 import { VRPanel } from "../../ui/panel";
 import { PanelList } from "../../ui/panel-list";
 import { PanelHeader } from "../../ui/panel-parts";
-import { COLOR, RADIUS, SPACE, TEXT } from "../../ui/tokens";
+import { COLOR, SPACE, TEXT } from "../../ui/tokens";
 import { VRText } from "../../ui/text";
+import { Bullet, Chip } from "../../destinations/parts";
 
 /**
  * What a marker opens — the flat site's destination card, rebuilt on the kit.
@@ -26,56 +27,6 @@ import { VRText } from "../../ui/text";
  * stadium markers are wayfinding points with a name and a position and nothing
  * else, and their panel's whole job is to confirm what you are looking at.
  */
-
-/** The leading dot on a bullet line. Small, because the line is the content. */
-const BULLET = 6;
-
-function Bullet({ children }: { children: string }) {
-  return (
-    <Container
-      width="100%"
-      flexShrink={0}
-      flexDirection="row"
-      alignItems="center"
-      gap={SPACE.icon}
-    >
-      <Container
-        width={BULLET}
-        height={BULLET}
-        flexShrink={0}
-        borderRadius={RADIUS.dot}
-        backgroundColor={COLOR.accentBright}
-      />
-      <VRText
-        flexGrow={1}
-        flexShrink={1}
-        fontSize={TEXT.body}
-        color={COLOR.text}
-      >
-        {children}
-      </VRText>
-    </Container>
-  );
-}
-
-/** A tag chip, matching the flat card's pills. */
-function Chip({ children }: { children: string }) {
-  return (
-    <Container
-      flexShrink={0}
-      paddingX={SPACE.row}
-      paddingY={4}
-      borderRadius={RADIUS.chip}
-      borderWidth={1}
-      borderColor={COLOR.rowBorder}
-      backgroundColor={COLOR.rowRest}
-    >
-      <VRText fontSize={TEXT.label} color={COLOR.muted} wordBreak="keep-all">
-        {children}
-      </VRText>
-    </Container>
-  );
-}
 
 /**
  * How busy it is.

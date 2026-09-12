@@ -3,25 +3,19 @@
 import { cn } from "@/lib/utils";
 import { ChevronRight, DoorOpen, Footprints, LocateFixed, MapPin, type LucideIcon } from "lucide-react";
 import type { DestinationRow } from "./use-destinations";
+import { CROWD_DOT, CROWD_WORD } from "@/components-v5/shared/crowd-display";
 
 // Bright accent (matches --nav-accent-bright) — the darker #0A84FF was barely
 // readable as small text over the dark glass panel.
 const HERE_BLUE = "#2997FF";
 
-/** Crowd tier → dot colour (red heavy · yellow moderate · blue clear) — shown
- *  inline on cards whose destination carries an authored `crowd` level (the
- *  memorial gates), replacing the separate Crowd Flow category. */
-export const CROWD_DOT: Record<string, string> = {
-  high: "#ff453a", // red
-  med: "#ffd60a",  // yellow
-  low: "#30d158",  // green — classic heat-map scale
-};
-/** Tier word shown beside the dot — a bare dot alone doesn't read as crowd. */
-export const CROWD_WORD: Record<string, string> = {
-  high: "Heavy",
-  med: "Moderate",
-  low: "Clear",
-};
+/** Crowd tier → dot colour and the word beside it, shown inline on cards whose
+ *  destination carries an authored `crowd` level (the memorial gates).
+ *
+ *  THE VALUES NOW LIVE IN `shared/crowd-display.ts` so the VR panels can read
+ *  them without importing this DOM card. Re-exported here because the map, the
+ *  legend and the notice overlay all import them from this path. */
+export { CROWD_DOT, CROWD_WORD };
 
 interface RowBodyProps {
   row: DestinationRow;

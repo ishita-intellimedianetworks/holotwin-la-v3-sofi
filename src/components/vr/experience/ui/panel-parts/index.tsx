@@ -1,7 +1,7 @@
 "use client";
 
 import { Container } from "@react-three/uikit";
-import { XIcon } from "@react-three/uikit-lucide";
+import { ArrowLeftIcon, XIcon } from "@react-three/uikit-lucide";
 import { COLOR, POINTER_ORDER, RADIUS, SPACE, TEXT } from "../tokens";
 import { VRText } from "../text";
 
@@ -73,6 +73,44 @@ export function CloseButton({ onClose }: { onClose: () => void }) {
 }
 
 /**
+ * Back, in the same shape as close.
+ *
+ * A disc for the same reason that one is — no dead corners for a ray — and in
+ * the panel's own palette rather than the danger red, because going back a step
+ * is not the same promise as dismissing the whole thing. They sit at opposite
+ * ends of the header so the two can never be pressed by accident for each
+ * other.
+ */
+function BackButton({ onBack }: { onBack: () => void }) {
+  return (
+    <Container
+      width={CLOSE_TARGET}
+      height={CLOSE_TARGET}
+      flexShrink={0}
+      pointerEventsOrder={POINTER_ORDER.overlay}
+      borderRadius={RADIUS.dot}
+      backgroundColor={COLOR.rowRest}
+      borderWidth={1}
+      borderColor={COLOR.rowBorder}
+      alignItems="center"
+      justifyContent="center"
+      cursor="pointer"
+      hover={{ backgroundColor: COLOR.rowHover }}
+      onPointerDown={onBack}
+    >
+      {/* Same reason as the close glyph: a child would otherwise swallow the
+          press aimed at the middle of the disc. */}
+      <ArrowLeftIcon
+        width={CLOSE_GLYPH}
+        height={CLOSE_GLYPH}
+        color={COLOR.text}
+        pointerEvents="none"
+      />
+    </Container>
+  );
+}
+
+/**
  * Title left, close right, in a row that OCCUPIES SPACE — so content below can
  * never end up underneath the close button, which is what an absolutely
  * positioned one does. The title shrinks; the disc never does.
@@ -80,11 +118,18 @@ export function CloseButton({ onClose }: { onClose: () => void }) {
 export function PanelHeader({
   title,
   subtitle,
+  onBack,
   onClose,
 }: {
   title: string;
   /** A quiet second line — which venue, which category. Optional. */
   subtitle?: string;
+  /**
+   * Go up one level, for a panel that drills in. Drawn BEFORE the title, where
+   * a back control belongs; a panel with nowhere to go back to omits it and the
+   * title simply starts at the edge.
+   */
+  onBack?: () => void;
   onClose?: () => void;
 }) {
   return (
@@ -96,6 +141,7 @@ export function PanelHeader({
       justifyContent="space-between"
       gap={SPACE.icon}
     >
+      {onBack && <BackButton onBack={onBack} />}
       <Container
         flexGrow={1}
         flexShrink={1}

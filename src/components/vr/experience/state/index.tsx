@@ -26,11 +26,36 @@ import type { VRHotspot } from "@/components/vr/data";
  */
 
 export type VRView = "doll-house" | "first-person";
-export type OpenMenu = "layouts" | "venues" | "instructions" | null;
+/**
+ * Which panel is up. ONE AT A TIME, and everything else keys off that:
+ * `panelIsOpen` below is what hides the dock, stops the doll house taking the
+ * ray and gates the world markers, so a panel modelled outside this union has
+ * to be hand-added there or it will fight the dock for every press.
+ *
+ * "destinations" replaced "layouts". The layouts menu was a list of viewpoints;
+ * the destination sheet is that list plus everything the flat card carries —
+ * the subcategories, the transport board, the seat picker, the notices — so it
+ * supersedes it rather than sitting beside it.
+ */
+export type OpenMenu =
+  | "destinations"
+  | "map"
+  | "venues"
+  | "instructions"
+  | null;
 
 export interface TeleportTarget {
   position: [number, number, number];
   rotationY: number;
+  /**
+   * PUT THE EYES AT THE AUTHORED HEIGHT AND DO NOT LOOK FOR A FLOOR.
+   *
+   * For a seat view, which is the only thing that sets this. Those sit above
+   * the navmesh — the nearest walkable surface under a stadium seat is the
+   * pitch, forty metres down — so the usual snap would land the player on the
+   * field every time. See `../teleport-driver`.
+   */
+  exactPose?: boolean;
 }
 
 interface VRStateValue {

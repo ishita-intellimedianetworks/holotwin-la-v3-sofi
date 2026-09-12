@@ -143,6 +143,25 @@ export function VRPanel({
         flexDirection="column"
         justifyContent="center"
         alignItems="center"
+        /**
+         * THE CARD SWALLOWS THE PRESS, and without this the dismiss above fires
+         * on every press INSIDE the panel as well as outside it.
+         *
+         * The backdrop is a sibling, not an ancestor, so a press on the card
+         * does not bubble to it — it reaches it independently, because a ray
+         * through the card also intersects the full-size surface behind it and
+         * pointer events are dispatched to every object on the ray. Stopping
+         * propagation here ends that walk at the card: anything nearer (every
+         * child of this panel) has already had the event, and the only thing
+         * farther is the backdrop.
+         *
+         * It went unnoticed until a panel had a control that does NOT close it.
+         * Every earlier one — a layout row, a venue row, the instructions
+         * button — dismissed the panel as part of its own job, so a second,
+         * unasked-for dismissal was invisible. The moment a press was meant to
+         * select a map pin or open a sub-view, the panel vanished under it.
+         */
+        onPointerDown={(event) => event.stopPropagation()}
         paddingX={SPACE.panelX}
         paddingY={SPACE.panelY}
         gapRow={SPACE.section}

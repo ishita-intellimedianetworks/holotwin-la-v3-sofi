@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import type { Destination } from "@/components-v5/shared/types";
+import { SEAT_VB_H, SEAT_VB_W, layoutSeats } from "@/components-v5/shared/seat-layout";
 import { PanelHeader } from "./panel-header";
 import { NAV_GLASS_PANEL } from "../nav-glass";
 import { useNavUiStore } from "../../store/nav-ui-store";
@@ -18,9 +19,11 @@ interface SeatMapProps {
 }
 
 // SVG canvas. Wider than tall to match the bowl footprint (X span ≫ Z span).
-const VB_W = 340;
-const VB_H = 224;
-const PAD = 30;
+// The box and the placement maths live in `shared/seat-layout.ts` so the VR seat
+// picker plots the same sections in the same relative spots; only the marks are
+// drawn differently there (uikit has no SVG).
+const VB_W = SEAT_VB_W;
+const VB_H = SEAT_VB_H;
 const DOT_R = 11;
 
 /**
@@ -34,27 +37,7 @@ export function SeatMap({ dests, visible, onClose, onTeleport }: SeatMapProps) {
   const currentId = useNavUiStore((s) => s.currentDest?.id ?? null);
   const [hoverId, setHoverId] = useState<string | null>(null);
 
-  const layout = useMemo(() => {
-    const pts = dests.flatMap((p) => (p.camera ? [{ dest: p, x: p.camera.position[0], z: p.camera.position[2] }] : []));
-    if (pts.length === 0) return null;
-    const xs = pts.map((p) => p.x);
-    const zs = pts.map((p) => p.z);
-    const minX = Math.min(...xs), maxX = Math.max(...xs);
-    const minZ = Math.min(...zs), maxZ = Math.max(...zs);
-    const spanX = Math.max(1, maxX - minX);
-    const spanZ = Math.max(1, maxZ - minZ);
-    const innerW = VB_W - 2 * PAD;
-    const innerH = VB_H - 2 * PAD;
-    const map = (x: number, z: number) => ({
-      px: PAD + ((x - minX) / spanX) * innerW,
-      py: PAD + ((z - minZ) / spanZ) * innerH,
-    });
-    const seats = pts.map((p) => ({ dest: p.dest, ...map(p.x, p.z) }));
-    const cx = xs.reduce((a, b) => a + b, 0) / xs.length;
-    const cz = zs.reduce((a, b) => a + b, 0) / zs.length;
-    const field = map(cx, cz);
-    return { seats, field, innerW, innerH };
-  }, [dests]);
+  const layout = useMemo(() => layoutSeats(dests), [dests]);
 
   const focusPoi =
     dests.find((p) => p.id === (hoverId ?? currentId)) ?? null;

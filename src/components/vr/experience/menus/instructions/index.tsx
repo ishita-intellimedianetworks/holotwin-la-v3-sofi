@@ -7,9 +7,9 @@ import {
   BuildingIcon,
   HouseIcon,
   InfoIcon,
-  LayersIcon,
+  LayoutGridIcon,
   LogOutIcon,
-  MapPinIcon,
+  MapIcon,
 } from "@react-three/uikit-lucide";
 import { useVenue } from "@/components/vr/data/venue-provider";
 import { VENUES } from "@/components/vr/data";
@@ -145,8 +145,9 @@ export function InstructionsMenu({
    * hotel room has no POIs at all, so it has neither button, and naming them
    * sends someone hunting for something that was never there.
    */
-  const hasPlaces = venue.layouts.length > 0;
-  const hasResources = venue.hotspots.length > 0;
+  const hasDestinations =
+    venue.layouts.length + venue.hotspots.length > 0;
+  const hasPlan = !!venue.floorPlan;
   const hasVenues = VENUES.length > 1;
 
   return (
@@ -228,13 +229,22 @@ export function InstructionsMenu({
           {isFirstPerson ? "Back to where you started" : "Re-frame the model"}
         </Row>
 
-        {isFirstPerson && hasPlaces && (
-          <Row control={button(MapPinIcon)}>Travel to a saved viewpoint</Row>
+        {/*
+          ONE ROW FOR ONE BUTTON. This was two — a viewpoint list and a marker
+          list — describing a single dock button between them, and drawing two
+          glyphs the dock does not have. The sheet behind that button now
+          carries the seat picker, the departures board and the notice board as
+          well, so the row says what it opens rather than listing what is in it.
+        */}
+        {isFirstPerson && hasDestinations && (
+          <Row control={button(LayoutGridIcon)}>
+            Everywhere in this venue, and what is happening
+          </Row>
         )}
 
-        {isFirstPerson && hasResources && (
-          <Row control={button(LayersIcon)}>
-            Find a place — markers only appear this way
+        {isFirstPerson && hasPlan && (
+          <Row control={button(MapIcon)}>
+            The floor plan, and where you are standing on it
           </Row>
         )}
 

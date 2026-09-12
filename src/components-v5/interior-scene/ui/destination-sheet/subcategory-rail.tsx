@@ -14,6 +14,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { iconKeyFor, type IconKey } from "@/components-v5/shared/icon-rules";
 import {
   DoorOpen, Eye, LayoutGrid, Trees, Utensils, Store, BusFront, SquareParking,
   Accessibility, Info, HelpCircle, ShieldAlert, Cctv, Wifi, KeyRound, Route,
@@ -33,34 +34,37 @@ interface SubcategoryRailProps {
   onSelect: (id: string) => void;
 }
 
-/** Keyword → icon, so each sub-category gets a fitting glyph without per-option
- *  config. First match wins; falls back to a location pin. */
-const ICON_RULES: [RegExp, LucideIcon][] = [
-  [/entrance|entry/i, DoorOpen],
-  [/gate/i, DoorOpen],
-  [/exit|emergency|egress/i, LogOut],
-  [/seat|vip|bowl|tier/i, Eye],
-  [/zone|concourse|layout|area/i, LayoutGrid],
-  [/surround|plaza|park|outdoor/i, Trees],
-  [/food|concession|dining/i, Utensils],
-  [/merch|store|retail|shop/i, Store],
-  [/transit|bus|shuttle|rideshare|drop/i, BusFront],
-  [/parking/i, SquareParking],
-  [/access/i, Accessibility],
-  [/medical|first aid|health/i, Cross],
-  [/information|info/i, Info],
-  [/assist|help|lost/i, HelpCircle],
-  [/security|incident|safety|checkpoint|restricted/i, ShieldAlert],
-  [/cctv|camera|command|surveillance/i, Cctv],
-  [/wifi|network|it |infrastructure/i, Wifi],
-  [/credential|control|scan/i, KeyRound],
-  [/scenario|route|drill|evac/i, Route],
-  [/vip|premium/i, Star],
-];
+/** Sub-category label → the lucide glyph for it.
+ *
+ *  THE KEYWORD RULES LIVE IN `shared/icon-rules.ts` now, keyed by a string
+ *  rather than a component, so the VR panels pick the same glyph for the same
+ *  label out of `@react-three/uikit-lucide`. What stays here is the React-DOM
+ *  icon set those keys map to. */
+const KEY_GLYPH: Record<IconKey, LucideIcon> = {
+  "door-open": DoorOpen,
+  "log-out": LogOut,
+  eye: Eye,
+  "layout-grid": LayoutGrid,
+  trees: Trees,
+  utensils: Utensils,
+  store: Store,
+  "bus-front": BusFront,
+  "square-parking": SquareParking,
+  accessibility: Accessibility,
+  cross: Cross,
+  info: Info,
+  help: HelpCircle,
+  "shield-alert": ShieldAlert,
+  cctv: Cctv,
+  wifi: Wifi,
+  "key-round": KeyRound,
+  route: Route,
+  star: Star,
+  "map-pin": MapPin,
+};
 
 export function iconFor(label: string): LucideIcon {
-  for (const [re, icon] of ICON_RULES) if (re.test(label)) return icon;
-  return MapPin;
+  return KEY_GLYPH[iconKeyFor(label)];
 }
 
 export function SubcategoryRail({ segments, active, onSelect }: SubcategoryRailProps) {

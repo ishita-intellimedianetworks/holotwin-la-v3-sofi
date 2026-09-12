@@ -3,7 +3,8 @@
 import { useVenueContext } from "@/components/vr/data/venue-provider";
 import { useVenueLoad } from "../load-progress";
 import { useVRState } from "../state";
-import { LayoutsMenu } from "./layouts";
+import { DestinationsPanel } from "../destinations";
+import { MapPanel } from "../map";
 import { InstructionsMenu } from "./instructions";
 import { VenuesMenu } from "./venues";
 
@@ -11,20 +12,18 @@ import { VenuesMenu } from "./venues";
  * Menu controller: renders whichever panel is open, and nothing else. Only one
  * is ever mounted.
  *
- * What OPENS them is the dock in `../toolbar`: one button each for the layout
- * list, the venue list and the instructions.
+ * What OPENS them is the dock in `../toolbar`: one button each for the
+ * destination sheet, the floor plan, the venue list and the instructions.
  */
 export function VRMenus() {
   const {
     view,
     openMenu: open,
     setOpenMenu,
-    teleportTo,
-    revealDestination,
     goToDollHouse,
   } = useVRState();
 
-  const { venue, venueId, setVenue } = useVenueContext();
+  const { venueId, setVenue } = useVenueContext();
   const { ready } = useVenueLoad();
 
   const close = () => setOpenMenu(null);
@@ -79,33 +78,20 @@ export function VRMenus() {
 
   if (!isFirstPerson) return null;
 
-  if (open === "layouts") {
-    return (
-      <LayoutsMenu
-        layouts={venue.layouts}
-        venueTitle={venue.title}
-        onSelect={(destinationId) => {
-          /**
-           * Travel to the destination's viewpoint if it has one, and reveal its
-           * markers either way — the two halves of what the flat site does when
-           * you pick a card. A destination with no camera is somewhere to look
-           * at rather than somewhere to stand, so refusing the whole action for
-           * want of a pose would make those rows dead.
-           */
-          const layout = venue.layouts.find(
-            (l) => l.destinationId === destinationId,
-          );
-          if (layout) {
-            teleportTo({
-              position: layout.position,
-              rotationY: layout.rotationY,
-            });
-          }
-          revealDestination(destinationId);
-        }}
-        onClose={close}
-      />
-    );
+  /*
+    Both of these take over their own travel, rather than reporting a choice
+    back up here to be acted on. That is the difference between them and the
+    menu they replaced: a list of viewpoints has one thing it can do with a
+    press, and a sheet with a timetable, a seat plot and a notice board in it
+    has several. Handing each panel the state hooks directly keeps this file a
+    router, which is all it ever claimed to be.
+  */
+  if (open === "destinations") {
+    return <DestinationsPanel onClose={close} />;
+  }
+
+  if (open === "map") {
+    return <MapPanel onClose={close} />;
   }
 
   return null;

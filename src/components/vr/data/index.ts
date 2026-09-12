@@ -23,7 +23,11 @@ import type {
   Destination,
   DestinationCategory,
   DestinationsByCategory,
+  DestinationTransitRoute,
+  DiningKind,
+  TransportDestination,
 } from "@/components-v5/shared/types";
+import { crowdRank } from "@/components-v5/shared/crowd-display";
 
 type V3 = [number, number, number];
 
@@ -81,6 +85,51 @@ export interface VRLayout extends VRPose {
   crowd?: string;
   /** One line explaining the crowd level. */
   crowdNote?: string;
+  /**
+   * The card fields below carry no meaning to the Layouts MENU, which lists
+   * places to stand and nothing else. They are here for the destination sheet,
+   * which is the flat card rebuilt in the headset and shows all of them.
+   */
+  /** Dining only — campus hall or restaurant, which is the segment control. */
+  kind?: DiningKind;
+  /** Restaurants only — sample menu items. */
+  menu?: string[];
+  /** Practice only — the sports trained here, rendered as chips. */
+  sports?: string[];
+  /** Open/available right now — the green dot on the card. */
+  open?: boolean;
+  /** Seat views only — the bowl section number. */
+  section?: number;
+  /** Transport hubs only — the routes serving this hub. */
+  transitRoutes?: DestinationTransitRoute[];
+  /**
+   * No walking route to here, in either direction — see `Destination`.
+   * Carried because it changes what the card OFFERS, even though VR has no
+   * walk to withhold: a destination flagged this way is one the authors say is
+   * unreachable on foot, and saying so is honest rather than cosmetic.
+   */
+  teleportOnly?: boolean;
+  /**
+   * KEEP THE AUTHORED Y ON ARRIVAL. Elevated destinations — every stadium seat
+   * view — sit above the navmesh, and the landing snaps to the walkable floor
+   * by default. For these that floor is the pitch, forty metres down. See
+   * `experience/teleport-driver`.
+   */
+  exactPose?: boolean;
+  /**
+   * EVERY ANNOTATION POINT THIS DESTINATION HAS, for the floor plan to pin.
+   *
+   * NOT the same list as `hotspots`, and the difference is the point. A 3D
+   * marker has to earn its place — a pin hanging in the air over a gate you can
+   * already travel to by name is a second copy of the menu, floating across a
+   * concourse you are trying to look at, so `EARNS_A_MARKER` throws twenty of
+   * the memorial's twenty-six away. A dot on a plan costs nothing and is the
+   * whole reason to look at a plan, so it keeps all of them.
+   *
+   * Falls back to the camera position, so a destination authored with no
+   * annotation point still appears somewhere on the map rather than nowhere.
+   */
+  pins: V3[];
 }
 
 /**
@@ -115,6 +164,57 @@ export interface VRHotspot {
   crowdNote?: string;
   /** Where to stand to look at it, if the POI records a camera. */
   camera?: VRPose;
+}
+
+/**
+ * A notice — an event update, a closure, a crowd reading.
+ *
+ * NOT A DESTINATION, and that separation is the whole reason this is a third
+ * list rather than a looser filter on the first. `scenes.json` files these
+ * under `pois` with a `camera`, because the flat site frames them for a card —
+ * but "West Ramp Closed" is a thing to KNOW, not a place to be sent, and four
+ * of the stadium's sit 15.9 m off the navmesh precisely because nobody meant
+ * them to be stood on. See `NOT_A_DESTINATION`.
+ *
+ * The camera comes along anyway, for the ones that have a sensible one: a
+ * closure you can look at from a walkable spot is worth being shown. The panel
+ * decides whether to offer it; the data does not throw it away.
+ */
+export interface VRNotice {
+  id: string;
+  title: string;
+  category: DestinationCategory;
+  group: string;
+  /** The notice TYPE — "Closures", "Today's Events". Its chip on the card. */
+  option?: string;
+  note?: string;
+  tags?: string[];
+  /** Where to stand to see it, if the POI records a camera worth using. */
+  camera?: VRPose;
+}
+
+/**
+ * One line of the crowd board: a place, how busy it is, and why.
+ *
+ * DERIVED, NOT AUTHORED. `scenes.json` has no crowd feed — the flat app's
+ * `CrowdFeed` component reads a `crowdFeed` array that is empty in every scene,
+ * and its `crowdFlowGlb` heat-map overlay is never configured either. What IS
+ * authored is `crowd` and `crowdNote` on individual POIs: ten of the memorial's
+ * gates and the stadium's entrances carry them.
+ *
+ * So the board is those POIs, ranked. That is not a reduced version of some
+ * richer feed that exists elsewhere; it is the only crowd data there has ever
+ * been, presented as a list instead of one badge at a time.
+ */
+export interface VRCrowdRow {
+  /** The POI this reading belongs to — travel goes through its layout. */
+  destinationId: string;
+  title: string;
+  /** "low" | "med" | "high", straight from `scenes.json`. */
+  crowd: string;
+  note?: string;
+  /** The category it came from, in display case — "Gates & Facilities". */
+  group: string;
 }
 
 /** How the doll house frames this venue. See `vr-scenes.json`. */
@@ -203,6 +303,37 @@ export interface VRVenue {
   dollHouse: VRDollHouse;
   layouts: VRLayout[];
   hotspots: VRHotspot[];
+  /** Event updates and the like — things to read, not places to go. */
+  notices: VRNotice[];
+  /** The crowd board, clearest first. Empty where nothing authors a level. */
+  crowdRows: VRCrowdRow[];
+  /**
+   * Venues reachable by transit from here, and which hub to board at. The
+   * village authors one; nothing else does.
+   */
+  transport: TransportDestination[];
+  /**
+   * The floor plan is a NUMBERED LIST rather than a field of named pins.
+   *
+   * The memorial and the stadium both set it, and the reason is density: 26 and
+   * 36 POIs on one plan, whose names do not fit beside their dots at any
+   * legible size. The flat map answers that by numbering the dots and putting
+   * the names in a list beside the plan, which is a different drawing, not a
+   * different style — see `drawHotspots`.
+   */
+  mapListMode: boolean;
+  /**
+   * Marker disc radius in metres, where the venue states one. The stadium's
+   * 0.05 is the only override; everything else uses the marker's own default.
+   */
+  hotspotSize?: number;
+  /**
+   * A press on the plan lands on the NEAREST WALKABLE TRIANGLE rather than
+   * where it was pressed. The memorial sets it — its plan covers stands its
+   * navmesh does not, so an honest projection of the press would drop the
+   * player through the building.
+   */
+  clickSnapToNav: boolean;
   locomotion: {
     /** Metres per second at full stick. */
     moveSpeed: number;
@@ -333,6 +464,10 @@ interface RawScene {
   interior?: boolean;
   dollhouseOnly?: boolean;
   pois?: DestinationsByCategory;
+  transportDestinations?: TransportDestination[];
+  mapListMode?: boolean;
+  hsSize?: number;
+  clickSnapToNav?: boolean;
 }
 
 /**
@@ -379,9 +514,13 @@ const EARNS_A_MARKER = new Set<string>([
 function collectPois(pois: DestinationsByCategory | undefined): {
   layouts: VRLayout[];
   hotspots: VRHotspot[];
+  notices: VRNotice[];
+  crowdRows: VRCrowdRow[];
 } {
   const layouts: VRLayout[] = [];
   const hotspots: VRHotspot[] = [];
+  const notices: VRNotice[] = [];
+  const crowdRows: VRCrowdRow[] = [];
 
   for (const [category, entries] of Object.entries(pois ?? {})) {
     const group = categoryLabel(category);
@@ -394,8 +533,34 @@ function collectPois(pois: DestinationsByCategory | undefined): {
           }
         : undefined;
 
-      if (camera && !NOT_A_DESTINATION.has(category)) {
+      if (NOT_A_DESTINATION.has(category)) {
+        /**
+         * A NOTICE, and it goes in its own list whether or not it has a camera.
+         * The camera test below is only about whether the panel can offer to
+         * take you there; a closure with no viewpoint is still a closure, and
+         * dropping it would silently shorten the board.
+         */
+        notices.push({
+          id: poi.id,
+          title: poi.label,
+          category: category as DestinationCategory,
+          group,
+          option: poi.option,
+          note: poi.note,
+          tags: poi.tags,
+          camera,
+        });
+      } else if (camera) {
+        const marks = poi.hotspots?.length
+          ? poi.hotspots
+          : poi.hotspot
+            ? [poi.hotspot]
+            : [];
+
         layouts.push({
+          pins: marks.length
+            ? marks.map((m) => v3(m.position))
+            : [camera.position],
           id: poi.id,
           title: poi.label,
           category: category as DestinationCategory,
@@ -406,8 +571,33 @@ function collectPois(pois: DestinationsByCategory | undefined): {
           tags: poi.tags,
           crowd: poi.crowd,
           crowdNote: poi.crowdNote,
+          kind: poi.kind,
+          menu: poi.menu,
+          sports: poi.sports,
+          open: poi.open,
+          section: poi.section,
+          transitRoutes: poi.transit?.routes,
+          teleportOnly: poi.teleportOnly,
+          exactPose: poi.exactPose,
           position: camera.position,
           rotationY: camera.rotationY,
+        });
+      }
+
+      /**
+       * The crowd board, built from whatever carries a level.
+       *
+       * Outside the branch above because a reading is worth listing wherever it
+       * was authored — and unlike a layout it does not need a camera, only a
+       * name and a level.
+       */
+      if (poi.crowd) {
+        crowdRows.push({
+          destinationId: poi.id,
+          title: poi.label,
+          crowd: poi.crowd,
+          note: poi.crowdNote,
+          group,
         });
       }
 
@@ -416,13 +606,13 @@ function collectPois(pois: DestinationsByCategory | undefined): {
        * type says: the plural is the newer field, and an entry carrying both
        * means the singular is the legacy fallback.
        */
-      const marks = poi.hotspots?.length
+      const markers = poi.hotspots?.length
         ? poi.hotspots
         : poi.hotspot
           ? [poi.hotspot]
           : [];
 
-      marks.forEach((mark, index) => {
+      markers.forEach((mark, index) => {
         const point = mark as {
           position: number[];
           rotation?: number[];
@@ -446,7 +636,7 @@ function collectPois(pois: DestinationsByCategory | undefined): {
 
         hotspots.push({
           // The POI id alone is not unique once a destination has two markers.
-          id: marks.length > 1 ? `${poi.id}#${index}` : poi.id,
+          id: markers.length > 1 ? `${poi.id}#${index}` : poi.id,
           label: point.label ?? poi.label,
           category: category as DestinationCategory,
           group,
@@ -465,7 +655,14 @@ function collectPois(pois: DestinationsByCategory | undefined): {
     }
   }
 
-  return { layouts, hotspots };
+  /**
+   * CLEAREST FIRST, because the board's job is to answer "which way in?".
+   * Busiest-first would be a ranking of problems; this is a recommendation.
+   * Ties keep authoring order, which groups a venue's gates together.
+   */
+  crowdRows.sort((a, b) => crowdRank(a.crowd) - crowdRank(b.crowd));
+
+  return { layouts, hotspots, notices, crowdRows };
 }
 
 /**
@@ -482,7 +679,7 @@ export const VENUES: VRVenue[] = (cfg.scenes as RawScene[])
   // Hidden in VR only — see `VRTuning.hidden`.
   .filter((scene) => !VR_VENUES[scene.key]?.hidden)
   .map((scene) => {
-    const { layouts, hotspots } = collectPois(scene.pois);
+    const { layouts, hotspots, notices, crowdRows } = collectPois(scene.pois);
 
     /**
      * VR tuning wins over the flat value wherever it is stated.
@@ -563,6 +760,12 @@ export const VENUES: VRVenue[] = (cfg.scenes as RawScene[])
       dollHouse,
       layouts,
       hotspots,
+      notices,
+      crowdRows,
+      transport: scene.transportDestinations ?? [],
+      mapListMode: scene.mapListMode ?? false,
+      hotspotSize: scene.hsSize,
+      clickSnapToNav: scene.clickSnapToNav ?? false,
       locomotion,
     };
   });

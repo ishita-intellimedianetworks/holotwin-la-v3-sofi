@@ -162,11 +162,37 @@ export function TeleportDriver() {
        */
       let toX = moveToLocation.position[0];
       let toZ = moveToLocation.position[2];
-      let ground = collider
-        ? stepFloor(collider, toX, toZ, hintY, LEVEL_HEIGHT, LEVEL_HEIGHT)
-        : null;
 
-      if (collider && ground == null) {
+      /**
+       * A SEAT IS NOT A PLACE ON THE FLOOR, so it does not get a floor.
+       *
+       * `exactPose` destinations — every stadium and memorial seat view — are
+       * authored ABOVE the navmesh on purpose, and the nearest walkable surface
+       * beneath one is the pitch. Running the snap on them is not a near miss,
+       * it is a guaranteed forty-metre drop to the field, which is why the
+       * authored height has to win outright here rather than merely hint.
+       *
+       * The subtraction is what makes it the EYE height it was authored as.
+       * `scenes.json`'s cameras are eye positions from the flat player, and the
+       * XR origin is the floor under the player's feet — so putting the origin
+       * at the authored value would seat someone a standing height too high,
+       * looking down on the row they meant to sit in. `headAbove` is the
+       * wearer's own measured height in a session and the venue's fallback eye
+       * height in the flat preview, so the eyes land on the authored number in
+       * both.
+       */
+      let ground: number | null = null;
+      let exactY: number | null = null;
+
+      if (moveToLocation.exactPose) {
+        exactY = targetY - (_head.y - origin.position.y);
+      } else {
+        ground = collider
+          ? stepFloor(collider, toX, toZ, hintY, LEVEL_HEIGHT, LEVEL_HEIGHT)
+          : null;
+      }
+
+      if (collider && exactY == null && ground == null) {
         const near = nearestCentroid(centroids, toX, toZ, hintY);
         if (near) {
           toX = near.x;
@@ -189,7 +215,8 @@ export function TeleportDriver() {
        * the hint standing, which is the old behaviour and the best guess
        * available.
        */
-      const toY = (ground ?? hintY) + groundOffset + standingLiftRef.current;
+      const toY =
+        exactY ?? (ground ?? hintY) + groundOffset + standingLiftRef.current;
 
       trip.current = {
         fromPos: origin.position.clone(),
