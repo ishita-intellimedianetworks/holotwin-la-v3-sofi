@@ -1,31 +1,31 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { Container } from "@react-three/uikit";
+import { FootprintsIcon, MapPinIcon } from "@react-three/uikit-lucide";
 import {
-  CalendarClockIcon,
-  BusFrontIcon,
-  EyeIcon,
-  UsersIcon,
-} from "@react-three/uikit-lucide";
-import type { TransportDestination } from "@/components-v5/shared/types";
+  CATEGORY_INFO,
+  type CategoryIconKey,
+} from "@/components-v5/shared/categories";
 import type { VRLayout, VRNotice } from "@/components/vr/data";
 import { useVenue } from "@/components/vr/data/venue-provider";
 import { VRPanel } from "../ui/panel";
 import { PanelList } from "../ui/panel-list";
-import { MenuRow } from "../ui/menu-row";
-import { PanelHeader, SectionLabel } from "../ui/panel-parts";
+import { MenuRow, ROW_GLYPH } from "../ui/menu-row";
+import { PanelHeader } from "../ui/panel-parts";
 import { VRText } from "../ui/text";
-import { COLOR, TEXT } from "../ui/tokens";
-import { crowdLabel, groupByCategoryAndOption } from "../menus/grouping";
+import { COLOR, SPACE, TEXT } from "../ui/tokens";
+import { CATEGORY_ICON } from "../ui/category-icons";
+import { crowdLabel } from "../menus/grouping";
 import { useVRState } from "../state";
 import { distanceLabel, etaLabel, flatDistance } from "../map/pins";
 import { CrowdPanel } from "./crowd-panel";
 import { NoticesPanel } from "./notices-panel";
 import { PlaceDetail } from "./place-detail";
 import { SeatMapPanel } from "./seat-map";
-import { TransportPanel } from "./transport-panel";
+import { Pill } from "./parts";
 
 /**
  * Everything the venue has to say about itself, behind one dock button.
@@ -38,7 +38,7 @@ import { TransportPanel } from "./transport-panel";
  * timetable, the seat picker, the notice board.
  *
  * SO THE SHAPE IS THAT LIST, PLUS BOARDS. The flat site puts its six special
- * categories — seat views, transport, event updates, crowd, infrastructure — in
+ * categories — seat views, event updates, crowd, infrastructure — in
  * the same rail as ordinary places, and routes each to a panel of its own.
  * Keeping the rail would mean the dock problem all over again, so the boards are
  * the first few rows of the one list instead: named, counted, and one press from
@@ -51,11 +51,32 @@ import { TransportPanel } from "./transport-panel";
  * shows its own search box above four.
  */
 
+/**
+ * RESOURCES, AS THE 3D SITE LAYS THEM OUT. The flat site gives every category
+ * its own flap on the left rail; here there is ONE dock button, and its panel
+ * opens on that rail as a list — each category with its own glyph and count.
+ * Picking one opens the flat category panel: its title, "N points - nearest
+ * first", the subcategory pills, and the destination cards, nearest first.
+ */
 type View =
   | { kind: "list" }
-  | { kind: "place"; place: VRLayout; distance: string; eta: string }
+  | {
+      kind: "category";
+      key: string;
+      /** The active subcategory pill, or null for the first. */
+      option: string | null;
+      /** Where the player stood when it opened — the list sorts from here. */
+      from: { x: number; z: number };
+    }
+  | {
+      kind: "place";
+      place: VRLayout;
+      distance: string;
+      eta: string;
+      /** The category list to go back to. */
+      back: View;
+    }
   | { kind: "seats" }
-  | { kind: "transport"; venue: TransportDestination | null }
   | { kind: "notices" }
   | { kind: "crowd" };
 
@@ -75,6 +96,19 @@ const _head = new THREE.Vector3();
 /** Seat views are a picker, not a list — the flat site treats them the same. */
 const SEAT_CATEGORIES = new Set(["seating", "seatviews"]);
 
+interface ResourceCategory {
+  key: string;
+  label: string;
+  unit: string;
+  iconKey: CategoryIconKey;
+  /** Subcategory pills above the list, as the flat panel's segment control. */
+  tabs: boolean;
+  count: number;
+  items: VRLayout[];
+  /** Opens a board of its own instead of a list. */
+  board?: "seats" | "notices" | "crowd";
+}
+
 export function DestinationsPanel({ onClose }: { onClose: () => void }) {
   const venue = useVenue();
   const { teleportTo, revealDestination } = useVRState();
@@ -83,8 +117,9 @@ export function DestinationsPanel({ onClose }: { onClose: () => void }) {
   const [view, setView] = useState<View>({ kind: "list" });
   const [now, setNow] = useState(() => Date.now());
 
-  /** Only ticking while a timetable is actually on screen. */
-  const showingTransport = view.kind === "transport";
+  /** Only ticking while a hub's departures are actually on screen. */
+  const showingTransport =
+    view.kind === "place" && !!view.place.transitRoutes?.length;
 
   /**
    * The interval only. The clock is re-read when the board is OPENED, in the
@@ -115,15 +150,90 @@ export function DestinationsPanel({ onClose }: { onClose: () => void }) {
     [venue.layouts],
   );
 
-  const groups = useMemo(
-    () => groupByCategoryAndOption(places),
-    [places],
-  );
+  /**
+   * The rail: every category this venue has, in the site's canonical order,
+   * with its site glyph. Seat views, event updates and crowd open their boards
+   * rather than a plain list — as their flat panels do.
+   */
+  const categories = useMemo(() => {
+    const byKey = new Map<string, VRLayout[]>();
+    for (const place of places) {
+      const list = byKey.get(place.category) ?? [];
+      list.push(place);
+      byKey.set(place.category, list);
+    }
 
-  /** Transport hubs, by POI id — what a `TransportDestination.hubId` names. */
-  const hubs = useMemo(
-    () => new Map(venue.layouts.map((l) => [l.destinationId, l])),
-    [venue.layouts],
+    const out: ResourceCategory[] = [];
+    for (const info of CATEGORY_INFO) {
+      const base = {
+        key: info.key,
+        label: info.label,
+        unit: info.unit,
+        iconKey: info.iconKey,
+        tabs: info.segmentBy === "option" && !info.flatOptions,
+      };
+      if (SEAT_CATEGORIES.has(info.key)) {
+        if (seats.length > 0 && !out.some((c) => c.board === "seats")) {
+          out.push({ ...base, count: seats.length, items: [], board: "seats" });
+        }
+        continue;
+      }
+      if (info.key === "eventupdates" && venue.notices.length > 0) {
+        byKey.delete(info.key);
+        out.push({
+          ...base,
+          count: venue.notices.length,
+          items: [],
+          board: "notices",
+        });
+        continue;
+      }
+      if (info.key === "crowdflow" && venue.crowdRows.length > 0) {
+        byKey.delete(info.key);
+        out.push({
+          ...base,
+          count: venue.crowdRows.length,
+          items: [],
+          board: "crowd",
+        });
+        continue;
+      }
+      const items = byKey.get(info.key);
+      if (!items?.length) continue;
+      byKey.delete(info.key);
+      out.push({ ...base, count: items.length, items });
+    }
+
+    // Anything the table does not know still gets a row, under its own name.
+    for (const [key, items] of byKey) {
+      out.push({
+        key,
+        label: items[0].group,
+        unit: "places",
+        iconKey: "layout-grid",
+        tabs: true,
+        count: items.length,
+        items,
+      });
+    }
+    return out;
+  }, [places, seats.length, venue.notices.length, venue.crowdRows.length]);
+
+  const openCategory = useCallback(
+    (category: ResourceCategory) => {
+      if (category.board) {
+        setView({ kind: category.board });
+        return;
+      }
+      camera.getWorldPosition(_head);
+      setView({
+        kind: "category",
+        key: category.key,
+        option: null,
+        from: { x: _head.x, z: _head.z },
+      });
+    },
+    [camera],
   );
 
   /**
@@ -135,7 +245,7 @@ export function DestinationsPanel({ onClose }: { onClose: () => void }) {
    * a texture instead of through React. See `../map`.
    */
   const openPlace = useCallback(
-    (place: VRLayout) => {
+    (place: VRLayout, backTo: View = { kind: "list" }) => {
       camera.getWorldPosition(_head);
       const units = flatDistance(
         _head.x,
@@ -143,11 +253,13 @@ export function DestinationsPanel({ onClose }: { onClose: () => void }) {
         place.position[0],
         place.position[2],
       );
+      setNow(Date.now());
       setView({
         kind: "place",
         place,
         distance: distanceLabel(units),
         eta: etaLabel(units),
+        back: backTo,
       });
     },
     [camera],
@@ -188,8 +300,9 @@ export function DestinationsPanel({ onClose }: { onClose: () => void }) {
             place={view.place}
             distance={view.distance}
             eta={view.eta}
+            now={now}
             onTravel={() => travelTo(view.place)}
-            onBack={back}
+            onBack={() => setView(view.back)}
             onClose={onClose}
           />
         );
@@ -198,23 +311,7 @@ export function DestinationsPanel({ onClose }: { onClose: () => void }) {
         return (
           <SeatMapPanel
             seats={seats}
-            venueTitle={venue.title}
             onSelect={travelTo}
-            onBack={back}
-            onClose={onClose}
-          />
-        );
-
-      case "transport":
-        return (
-          <TransportPanel
-            venues={venue.transport}
-            hubs={hubs}
-            venueTitle={venue.title}
-            now={now}
-            selected={view.venue}
-            onSelect={(next) => setView({ kind: "transport", venue: next })}
-            onTravelToHub={travelTo}
             onBack={back}
             onClose={onClose}
           />
@@ -224,7 +321,6 @@ export function DestinationsPanel({ onClose }: { onClose: () => void }) {
         return (
           <NoticesPanel
             notices={venue.notices}
-            venueTitle={venue.title}
             onTravel={travelToNotice}
             onBack={back}
             onClose={onClose}
@@ -235,124 +331,147 @@ export function DestinationsPanel({ onClose }: { onClose: () => void }) {
         return (
           <CrowdPanel
             rows={venue.crowdRows}
-            venueTitle={venue.title}
             onSelect={(destinationId) => {
               const place = venue.layouts.find(
                 (l) => l.destinationId === destinationId,
               );
-              if (place) openPlace(place);
+              if (place) openPlace(place, { kind: "crowd" });
             }}
             onBack={back}
             onClose={onClose}
           />
         );
 
+      case "category": {
+        const category = categories.find((c) => c.key === view.key);
+        if (!category) return null;
+
+        const options = [
+          ...new Set(
+            category.items
+              .map((item) => item.option)
+              .filter((o): o is string => !!o),
+          ),
+        ];
+        const showTabs = category.tabs && options.length > 1;
+        const active = view.option ?? options[0] ?? null;
+
+        const rows = (
+          showTabs
+            ? category.items.filter((item) => item.option === active)
+            : category.items
+        )
+          .map((item) => ({
+            item,
+            units: flatDistance(
+              view.from.x,
+              view.from.z,
+              item.position[0],
+              item.position[2],
+            ),
+          }))
+          .sort((x, y) => x.units - y.units);
+
+        return (
+          <>
+            <PanelHeader
+              title={category.label}
+              subtitle={`${rows.length} ${category.unit} - nearest first`}
+              onBack={back}
+              onClose={onClose}
+            />
+
+            {/* The subcategory pills — the flat panel's segment control. */}
+            {showTabs && (
+              <Container
+                width="100%"
+                flexShrink={0}
+                flexDirection="row"
+                flexWrap="wrap"
+                gap={SPACE.row}
+                paddingX={SPACE.listX}
+              >
+                {options.map((option) => (
+                  <Pill
+                    key={option}
+                    active={option === active}
+                    onSelect={() => setView({ ...view, option })}
+                  >
+                    {option}
+                  </Pill>
+                ))}
+              </Container>
+            )}
+
+            <PanelList>
+              {rows.length === 0 ? (
+                <VRText fontSize={TEXT.body} color={COLOR.muted}>
+                  No places match those filters
+                </VRText>
+              ) : (
+                rows.map(({ item, units }) => (
+                  <MenuRow
+                    key={item.id}
+                    label={item.title}
+                    icon={
+                      <MapPinIcon
+                        width={ROW_GLYPH}
+                        height={ROW_GLYPH}
+                        color={COLOR.muted}
+                      />
+                    }
+                    subline={etaLabel(units)}
+                    subIcon={
+                      <FootprintsIcon
+                        width={18}
+                        height={18}
+                        color={COLOR.muted}
+                      />
+                    }
+                    distance={distanceLabel(units)}
+                    detail={crowdLabel(item.crowd)}
+                    onSelect={() => openPlace(item, view)}
+                  />
+                ))
+              )}
+            </PanelList>
+          </>
+        );
+      }
+
       default:
         return (
           <>
             <PanelHeader
-              title="Destinations"
+              title="Resources"
               subtitle={venue.title}
               onClose={onClose}
             />
 
             <PanelList>
-              {/*
-                The boards, above the places.
-                Each is gated on its venue actually authoring something: an
-                empty "Transport" row that opens an empty panel is worse than
-                no row, because it costs a press to learn nothing.
-              */}
-              {seats.length > 0 && (
-                <MenuRow
-                  label="Seat views"
-                  detail={`${seats.length}`}
-                  icon={
-                    <EyeIcon width={22} height={22} color={COLOR.accentBright} />
-                  }
-                  onSelect={() => setView({ kind: "seats" })}
-                />
-              )}
-
-              {venue.transport.length > 0 && (
-                <MenuRow
-                  label="Transport"
-                  detail={`${venue.transport.length}`}
-                  icon={
-                    <BusFrontIcon
-                      width={22}
-                      height={22}
-                      color={COLOR.accentBright}
-                    />
-                  }
-                  onSelect={() => {
-                    setNow(Date.now());
-                    setView({ kind: "transport", venue: null });
-                  }}
-                />
-              )}
-
-              {venue.notices.length > 0 && (
-                <MenuRow
-                  label="Event updates"
-                  detail={`${venue.notices.length}`}
-                  icon={
-                    <CalendarClockIcon
-                      width={22}
-                      height={22}
-                      color={COLOR.accentBright}
-                    />
-                  }
-                  onSelect={() => setView({ kind: "notices" })}
-                />
-              )}
-
-              {venue.crowdRows.length > 0 && (
-                <MenuRow
-                  label="Crowd"
-                  detail={`${venue.crowdRows.length}`}
-                  icon={
-                    <UsersIcon
-                      width={22}
-                      height={22}
-                      color={COLOR.accentBright}
-                    />
-                  }
-                  onSelect={() => setView({ kind: "crowd" })}
-                />
-              )}
-
-              {places.length === 0 ? (
+              {categories.length === 0 ? (
                 <VRText fontSize={TEXT.body} color={COLOR.muted}>
-                  This venue has no saved viewpoints.
+                  No data for this venue yet
                 </VRText>
               ) : (
-                groups.map((group) => (
-                  <Fragment key={group.group}>
-                    {/* The category — what the flat rail draws as a button. */}
-                    <SectionLabel>{group.group}</SectionLabel>
-
-                    {group.sections.map((section) => (
-                      <Fragment key={section.option ?? "_"}>
-                        {/* The subcategory, only where the venue authored more
-                            than one: a lone heading under its category says
-                            nothing the category did not. */}
-                        {section.option && group.sections.length > 1 && (
-                          <SectionLabel indent>{section.option}</SectionLabel>
-                        )}
-
-                        {section.items.map((row) => (
-                          <MenuRow
-                            key={row.id}
-                            label={row.title}
-                            detail={crowdLabel(row.crowd)}
-                            onSelect={() => openPlace(row)}
-                          />
-                        ))}
-                      </Fragment>
-                    ))}
-                  </Fragment>
-                ))
+                categories.map((category) => {
+                  const Icon = CATEGORY_ICON[category.iconKey];
+                  return (
+                    <MenuRow
+                      key={category.key}
+                      label={category.label}
+                      icon={
+                        <Icon
+                          width={ROW_GLYPH}
+                          height={ROW_GLYPH}
+                          color={COLOR.muted}
+                        />
+                      }
+                      subline={`${category.count} ${category.unit}`}
+                      onSelect={() => openCategory(category)}
+                    />
+                  );
+                })
               )}
             </PanelList>
           </>
@@ -360,9 +479,5 @@ export function DestinationsPanel({ onClose }: { onClose: () => void }) {
     }
   })();
 
-  return (
-    <VRPanel width="46%" maxHeight="62%" onDismiss={onClose}>
-      {body}
-    </VRPanel>
-  );
+  return <VRPanel onDismiss={onClose}>{body}</VRPanel>;
 }

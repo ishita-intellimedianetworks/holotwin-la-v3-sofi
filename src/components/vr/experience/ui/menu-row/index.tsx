@@ -3,14 +3,18 @@
 import { useRef, type ReactNode } from "react";
 import { Container } from "@react-three/uikit";
 import * as THREE from "three";
+import { ChevronRightIcon } from "@react-three/uikit-lucide";
 import { COLOR, RADIUS, ROW_HEIGHT, SPACE, TEXT } from "../tokens";
 import { VRText } from "../text";
 
 /**
- * The one row every list is built from.
+ * The one row every list is built from — the 3D site's destination card
+ * (`destination-sheet/destination-card.tsx`), drawn in uikit.
  *
- * Left-aligned and fixed-height: a centred label in a full-width row is a
- * button pretending to be a list item, and a stack of them has no edge to scan.
+ * The same anatomy: a dark rounded card, a round icon tile on the left, the
+ * name in semibold with a quiet line under it (the walk time, a count), and on
+ * the right a bold figure over a faint chevron. The row you are standing at is
+ * the blue "You're here" card.
  *
  * A ROW SELECTS ON RELEASE, and it is the only control here that does.
  *
@@ -40,20 +44,42 @@ import { VRText } from "../text";
  */
 const DRAG_SLOP = 0.02;
 
+/** `h-9 w-9` — the leading tile. */
+const TILE = 56;
+/** `size={16}` inside it. */
+const TILE_GLYPH = 26;
+/** `size={15}` — the disclosure chevron. */
+const CHEVRON = 24;
+
 export function MenuRow({
   label,
   detail,
+  subline,
+  subIcon,
+  distance,
   icon,
   active = false,
+  chevron = true,
   onSelect,
 }: {
   label: string;
   /** A quiet trailing note — a category, a crowd level. Optional. */
   detail?: string;
-  /** Optional leading glyph. Sized and coloured by the caller. */
+  /** The quiet line under the name — a walk time, a count. */
+  subline?: string;
+  /** A small glyph before `subline` (footprints before a walk time). */
+  subIcon?: ReactNode;
+  /** The bold figure on the right — the distance. */
+  distance?: string;
+  /**
+   * The glyph drawn in the leading tile. Sized by the caller — use
+   * `ROW_GLYPH` — and coloured `COLOR.muted` to match the flat card.
+   */
   icon?: ReactNode;
-  /** Marks the row you are currently at. */
+  /** The "You're here" / selected card. */
   active?: boolean;
+  /** The disclosure chevron. On by default, as on every flat card. */
+  chevron?: boolean;
   onSelect: () => void;
 }) {
   /**
@@ -67,19 +93,18 @@ export function MenuRow({
   return (
     <Container
       width="100%"
-      height={ROW_HEIGHT}
+      minHeight={ROW_HEIGHT}
       flexShrink={0}
       flexDirection="row"
       alignItems="center"
       justifyContent="flex-start"
       gap={SPACE.icon}
-      paddingX={SPACE.rowX}
-      borderRadius={RADIUS.row}
-      borderWidth={1}
-      borderColor={active ? COLOR.rowBorderActive : COLOR.rowBorder}
-      backgroundColor={active ? COLOR.rowActive : COLOR.rowRest}
+      paddingX={22}
+      paddingY={18}
+      borderRadius={RADIUS.card}
+      backgroundColor={active ? COLOR.here : COLOR.rowRest}
       cursor="pointer"
-      hover={{ backgroundColor: COLOR.rowHover }}
+      hover={{ backgroundColor: active ? COLOR.here : COLOR.tile }}
       onPointerDown={(event) => {
         if (event.pointerId == null) return;
         pressed.current.set(event.pointerId, event.point.clone());
@@ -103,30 +128,84 @@ export function MenuRow({
         if (from && from.distanceTo(event.point) <= DRAG_SLOP) onSelect();
       }}
     >
-      {icon}
-      <VRText
+      {!!icon && (
+        <Container
+          width={TILE}
+          height={TILE}
+          flexShrink={0}
+          borderRadius={RADIUS.dot}
+          backgroundColor={active ? COLOR.accentBright : COLOR.tile}
+          alignItems="center"
+          justifyContent="center"
+          pointerEvents="none"
+        >
+          {icon}
+        </Container>
+      )}
+
+      <Container
         flexGrow={1}
         flexShrink={1}
         minWidth={0}
-        fontSize={TEXT.body}
-        color={COLOR.text}
-        // One line. A wrapping row would break the fixed height, and these
-        // labels are titles — if one is too long it wants shortening in
-        // `scenes.json`, not two lines here.
-        wordBreak="keep-all"
+        flexDirection="column"
+        gapRow={4}
+        pointerEvents="none"
       >
-        {label}
-      </VRText>
-      {!!detail && (
-        <VRText
-          flexShrink={0}
-          fontSize={TEXT.label}
-          color={COLOR.muted}
-          wordBreak="keep-all"
-        >
-          {detail}
+        <VRText fontSize={TEXT.name} fontWeight="semi-bold" color={COLOR.text}>
+          {label}
         </VRText>
+        {!!subline && (
+          <Container flexDirection="row" alignItems="center" gap={8}>
+            {subIcon}
+            <VRText
+              fontSize={TEXT.label}
+              color={active ? COLOR.accentBright : COLOR.muted}
+            >
+              {subline}
+            </VRText>
+          </Container>
+        )}
+      </Container>
+
+      {(!!detail || !!distance || chevron) && (
+        <Container
+          flexShrink={0}
+          flexDirection="column"
+          alignItems="flex-end"
+          gapRow={2}
+          pointerEvents="none"
+        >
+          {!!distance && (
+            <VRText
+              fontSize={TEXT.name}
+              fontWeight="bold"
+              color={COLOR.text}
+              wordBreak="keep-all"
+            >
+              {distance}
+            </VRText>
+          )}
+          {!!detail && (
+            <VRText
+              fontSize={TEXT.label}
+              color={COLOR.muted}
+              wordBreak="keep-all"
+            >
+              {detail}
+            </VRText>
+          )}
+          {chevron && (
+            <ChevronRightIcon
+              width={CHEVRON}
+              height={CHEVRON}
+              color={COLOR.faint}
+            />
+          )}
+        </Container>
       )}
     </Container>
   );
 }
+
+/** The glyph size a `MenuRow` tile expects. */
+export const ROW_GLYPH = TILE_GLYPH;

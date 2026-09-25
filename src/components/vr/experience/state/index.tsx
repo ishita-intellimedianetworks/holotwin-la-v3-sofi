@@ -38,11 +38,7 @@ export type VRView = "doll-house" | "first-person";
  * supersedes it rather than sitting beside it.
  */
 export type OpenMenu =
-  | "destinations"
-  | "map"
-  | "venues"
-  | "instructions"
-  | null;
+  "destinations" | "map" | "venues" | "instructions" | null;
 
 export interface TeleportTarget {
   position: [number, number, number];
@@ -100,6 +96,13 @@ interface VRStateValue {
   revealedDestinationId: string | null;
   revealDestination: (id: string | null) => void;
 
+  /**
+   * The dock put away, and every panel with it — nothing on screen but the
+   * venue. B or Y on either controller brings it back (see `../bar-toggle`).
+   */
+  barHidden: boolean;
+  setBarHidden: (hidden: boolean) => void;
+
   /** True when anything is covering the view. Input behind a panel is dropped. */
   panelIsOpen: boolean;
 
@@ -154,6 +157,15 @@ export function VRStateProvider({ children }: PropsWithChildren) {
     null,
   );
   const [landToken, setLandToken] = useState(0);
+  const [barHidden, setBarHiddenRaw] = useState(false);
+  const setBarHidden = useCallback((hidden: boolean) => {
+    setBarHiddenRaw(hidden);
+    // Put away with the bar, so bringing it back does not reopen a panel.
+    if (hidden) {
+      setOpenMenu(null);
+      setOpenHotspot(null);
+    }
+  }, []);
 
   /**
    * Which views have already introduced themselves. Seeded with `doll-house`:
@@ -173,6 +185,8 @@ export function VRStateProvider({ children }: PropsWithChildren) {
   const enter = useCallback((next: VRView) => {
     setView(next);
     setOpenHotspot(null);
+    // A new view starts with its bar up, even if it was hidden in the last one.
+    setBarHiddenRaw(false);
     // Back to a clean venue. Crossing between views is a fresh start, and a
     // marker left over from a previous visit is one you did not ask for on
     // this one.
@@ -230,6 +244,8 @@ export function VRStateProvider({ children }: PropsWithChildren) {
       setOpenHotspot,
       revealedDestinationId,
       revealDestination,
+      barHidden,
+      setBarHidden,
       panelIsOpen: openMenu !== null || openHotspot !== null,
       landToken,
       recentre,
@@ -246,6 +262,8 @@ export function VRStateProvider({ children }: PropsWithChildren) {
       openHotspot,
       revealedDestinationId,
       revealDestination,
+      barHidden,
+      setBarHidden,
       landToken,
       recentre,
     ],

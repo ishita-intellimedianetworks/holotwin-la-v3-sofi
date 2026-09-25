@@ -8,12 +8,21 @@
  */
 
 /** Layout spacing. */
+/**
+ * THE 3D SITE'S PANEL, SCALED. Every value below is the flat destination
+ * panel's own (`components-v5/interior-scene/ui/destination-sheet`) times
+ * ~1.6, which is what puts its 15 px card title at the 24-25 px a headset
+ * reads at 2 m. Change the ratio, not individual numbers.
+ */
 export const SPACE = {
-  panelX: 16,
-  panelY: 16,
-  section: 16,
-  row: 8,
-  listX: 16,
+  /** `px-5 pt-6` on the flat panel. */
+  panelX: 28,
+  panelY: 28,
+  section: 18,
+  /** `gap-2` between cards. */
+  row: 12,
+  /** The panel already carries the inset; this only clears the scrollbar. */
+  listX: 8,
   icon: 16,
   rowX: 18,
   primaryX: 32,
@@ -53,77 +62,98 @@ export const POINTER_ORDER = {
 export const ROW_HEIGHT = 48;
 
 export const RADIUS = {
-  panel: 20,
-  row: 12,
-  chip: 8,
+  /** `rounded-[14px]`. */
+  panel: 22,
+  /** `rounded-2xl` — a destination card. */
+  card: 26,
+  /** `rounded-[14px]` — the Start / Teleport buttons, the subcategory pill. */
+  row: 22,
+  chip: 14,
   dot: 999,
 } as const;
 
+/** The flat panel's type scale × ~1.6. */
 export const TEXT = {
-  label: 18,
+  /** 12-12.5 px — the walk-time line, chips, meta. */
+  label: 20,
+  /** 13-13.5 px — subtitles, prose. */
   body: 22,
-  heading: 32,
+  /** 15 px semibold — a card's name. */
+  name: 25,
+  /** 18 px bold — the panel title. */
+  heading: 30,
 } as const;
 
 /**
  * The site's own palette, adapted for 3D.
  *
- * `components-v5/shared/tokens` describes every overlay as glass:
- * `rgba(15,23,42,0.55)` behind a `blur(12px)`, slate text, a cyan accent. The
- * hues carry over exactly; the BLUR cannot. A `backdrop-filter` needs a
+ * THE 3D SITE'S `--nav-*` PALETTE (`app/globals.css`), so a popup in the
+ * headset is the same object as the one on the screen: near-black glass
+ * `rgba(9,11,15)`, a 14% white hairline, soft-white text, and the blue accent
+ * — solid `#0071e3` for fills, bright `#2997ff` for text, rings and markers.
+ *
+ * The hues carry over exactly; the BLUR cannot. A `backdrop-filter` needs a
  * backdrop to filter, and in a headset the "backdrop" is the room being drawn
- * in the same pass — there is nothing behind the panel to sample. A dark tint
- * plus a bright hairline is what reads as glass instead, so `GlassSurface`
- * stands in for `NAV_GLASS`.
+ * in the same pass. So the glass is the same colour at a heavier opacity (see
+ * `OPACITY`) rather than the site's 0.52 plus a 22 px blur.
+ *
+ * Row surfaces are SOLID, not white-at-an-opacity: uikit 1.x has no
+ * `backgroundOpacity`, and `opacity` cascades into the label. Each one is the
+ * site's translucent value pre-blended over the glass, so it lands on the same
+ * colour the site shows.
  */
 export const COLOR = {
-  /** `tokens.glass.bg`, opaque — the opacity is applied as a separate layer. */
-  panel: "#0f172a",
+  /** `--nav-glass` base, opaque — the opacity is applied as a separate layer. */
+  panel: "#090b0f",
+  /** `--nav-border` is this at 14%. */
   border: "#ffffff",
-  text: "#ffffff",
-  /** `tokens.color.dim`. */
-  muted: "#94a3b8",
-  /**
-   * FILL colour for the one affirmative button on a panel.
-   *
-   * NOT the site's `#22d3ee`. That cyan is a stroke and a glow colour — it is
-   * used for hairlines, active rails and the wayfinding line — and it is far
-   * too light to carry white text: white on it reads 1.9:1, well under the 4.5
-   * a label needs. This is the same hue three steps darker, where white reads
-   * 5.3:1, so the button matches the site without the one non-white label the
-   * bright version would force.
-   */
-  accent: "#0e7490",
-  accentHover: "#0891b2",
-  /**
-   * For anything THIN — a hairline, a spinner stroke, a scrollbar. This IS the
-   * site's accent, used where a bright colour belongs.
-   */
-  accentBright: "#22d3ee",
-  danger: "#e5484d",
-  dangerHover: "#f2555a",
+  /** `--nav-text`. */
+  text: "#f4f6f8",
+  /** `--nav-text-2` — `rgba(255,255,255,0.82)` over the glass. */
+  muted: "#d3d4d5",
+  /** `--nav-accent` — the site's solid blue for active fills and CTAs. */
+  accent: "#0071e3",
+  /** `#0a84ff`, the site's hover/selected blue. */
+  accentHover: "#0a84ff",
+  /** `--nav-accent-bright` — text, rings, markers, the scrollbar. */
+  accentBright: "#2997ff",
+  /** The site's stop/danger red. */
+  danger: "#e8453c",
+  dangerHover: "#ff5a50",
 
-  /**
-   * Row surfaces are SOLID, not white-at-an-opacity. uikit 1.x has no
-   * `backgroundOpacity`, and `opacity` cascades into the label. Solid also
-   * guarantees contrast over a venue of any colour — and these range from a
-   * night-lit stadium bowl to a white hotel room.
-   */
-  rowRest: "#16202e",
-  rowHover: "#22303f",
-  /** The same shift, tinted toward the accent's hue. */
-  rowActive: "#0b2b33",
-  rowBorder: "#2b3542",
-  rowBorderActive: "#22d3ee",
+  /** `rgba(255,255,255,0.06)` over the glass — a resting row or disc. */
+  rowRest: "#17191d",
+  /** `hover:bg-white/[0.12]`-ish over the glass. */
+  rowHover: "#25272b",
+  /** `rgba(10,132,255,0.16)` over the glass — a selected row. */
+  rowActive: "#0a1e35",
+  /** `--nav-border` over the glass. */
+  rowBorder: "#2d2f33",
+  rowBorderActive: "#2997ff",
+
+  /** `--nav-text-faint` — `rgba(255,255,255,0.6)` over the glass. Chevrons. */
+  faint: "#9d9e9f",
+  /** `rgba(255,255,255,0.10)` — a card's leading icon tile, a card on hover. */
+  tile: "#1f2124",
+  /** `rgba(255,255,255,0.14)` — the header's close disc. */
+  closeFill: "#2d2f33",
+  closeHover: "#3e4044",
+  /** `rgba(41,151,255,0.20)` — the "You're here" card. */
+  here: "#0f273f",
 } as const;
 
 export const OPACITY = {
-  /** `tokens.glass.bg` is 0.55; a shade heavier here because there is no blur
-   *  doing half the work of separating the card from the scene. */
-  panel: 0.72,
-  /** Far higher than the site's `rgba(255,255,255,0.08)`: at headset resolution
-   *  an 8% hairline is not visible at all. */
-  border: 0.45,
+  /**
+   * The site's glass is 0.52 behind a 22 px blur. With no blur possible here,
+   * 0.52 lets a bright stadium straight through the text, so the same colour
+   * is held at 0.9.
+   */
+  panel: 0.9,
+  /**
+   * The site's hairline is 14%; at headset resolution that vanishes against a
+   * bright venue, so it is doubled.
+   */
+  border: 0.3,
 } as const;
 
 /**

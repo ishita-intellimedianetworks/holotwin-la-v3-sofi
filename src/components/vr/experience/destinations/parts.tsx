@@ -25,14 +25,53 @@ export function Chip({ children }: { children: string }) {
   return (
     <Container
       flexShrink={0}
-      paddingX={SPACE.row}
-      paddingY={4}
-      borderRadius={RADIUS.chip}
+      paddingX={16}
+      paddingY={6}
+      borderRadius={RADIUS.dot}
       borderWidth={1}
       borderColor={COLOR.rowBorder}
       backgroundColor={COLOR.rowRest}
     >
       <VRText fontSize={TEXT.label} color={COLOR.muted} wordBreak="keep-all">
+        {children}
+      </VRText>
+    </Container>
+  );
+}
+
+/**
+ * A pressable pill — the flat panel's subcategory control. Solid blue when
+ * active, the resting card fill otherwise.
+ */
+export function Pill({
+  children,
+  active,
+  onSelect,
+}: {
+  children: string;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <Container
+      flexShrink={0}
+      paddingX={SPACE.rowX}
+      paddingY={10}
+      borderRadius={RADIUS.dot}
+      borderWidth={1}
+      borderColor={active ? COLOR.accent : COLOR.rowBorder}
+      backgroundColor={active ? COLOR.accent : COLOR.rowRest}
+      cursor="pointer"
+      hover={{ backgroundColor: active ? COLOR.accentHover : COLOR.tile }}
+      onPointerDown={onSelect}
+    >
+      <VRText
+        fontSize={TEXT.label}
+        color={active ? "#ffffff" : COLOR.muted}
+        fontWeight={active ? "semi-bold" : "medium"}
+        wordBreak="keep-all"
+        pointerEvents="none"
+      >
         {children}
       </VRText>
     </Container>
@@ -98,10 +137,7 @@ export function Prose({
 }) {
   return (
     <Container width="100%" flexShrink={0}>
-      <VRText
-        fontSize={TEXT.body}
-        color={muted ? COLOR.muted : COLOR.text}
-      >
+      <VRText fontSize={TEXT.body} color={muted ? COLOR.muted : COLOR.text}>
         {children}
       </VRText>
     </Container>
@@ -175,7 +211,13 @@ export function CrowdLine({
  */
 export function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <Container flexGrow={1} flexShrink={1} minWidth={0} flexDirection="column" gapRow={4}>
+    <Container
+      flexGrow={1}
+      flexShrink={1}
+      minWidth={0}
+      flexDirection="column"
+      gapRow={4}
+    >
       <VRText fontSize={TEXT.label} color={COLOR.muted} wordBreak="keep-all">
         {label}
       </VRText>

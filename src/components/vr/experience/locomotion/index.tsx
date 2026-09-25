@@ -434,7 +434,10 @@ export function NavmeshLocomotion({
         if (ground != null) groundY.current = ground;
 
         const settle =
-          groundY.current + groundOffset + (standingLiftRef?.current ?? 0) - p.y;
+          groundY.current +
+          groundOffset +
+          (standingLiftRef?.current ?? 0) -
+          p.y;
         if (settle !== 0) {
           p.y += settle * (1 - Math.exp(-FLOOR_FOLLOW_RATE * dt));
         }

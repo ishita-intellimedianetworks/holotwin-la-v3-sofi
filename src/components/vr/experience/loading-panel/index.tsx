@@ -46,8 +46,11 @@ import { VRText } from "../ui/text";
  */
 const BAR_SHARE = 0.58;
 
+/** Above the blackout's 900, level with every panel. */
+const RENDER_ORDER = 1000;
+
 export function LoadingPanel({ title }: { title: string }) {
-  const { percent, indeterminate } = useVenueLoad();
+  const { percent } = useVenueLoad();
   const viewportHeight = useThree((state) => state.size.height);
 
   const width = Math.round(BAR_SHARE * viewportHeight);
@@ -64,11 +67,15 @@ export function LoadingPanel({ title }: { title: string }) {
       // decodes — and leaving it rayable would put an invisible sheet in front
       // of a dock that is already hidden anyway.
       pointerEvents="none"
-      // At 2 m this intersects walls and seating, so it must draw last and
-      // unconditionally or it comes out half-buried.
+      // Drawn over the blackout (`../blackout`), which is what it sits on
+      // during a venue change, and over walls and seating at 2 m.
       depthTest={false}
-      renderOrder={1000}
+      renderOrder={RENDER_ORDER}
     >
+      {/*
+        The flat site's loader, line for line: a small caps label, the name,
+        and the glowing bar with its percentage beside it.
+      */}
       <Container
         flexDirection="column"
         alignItems="center"
@@ -76,26 +83,38 @@ export function LoadingPanel({ title }: { title: string }) {
         gapRow={SPACE.row}
         width={width}
       >
-        <VRText fontSize={TEXT.body} color={COLOR.text} textAlign="center">
-          {`Loading ${title}`}
+        <VRText
+          fontSize={TEXT.label}
+          color={COLOR.accentBright}
+          textAlign="center"
+          letterSpacing={4}
+          fontWeight="semi-bold"
+        >
+          LOADING
+        </VRText>
+        <VRText fontSize={TEXT.heading} color={COLOR.text} textAlign="center">
+          {title}
         </VRText>
 
-        <ProgressBar percent={percent} indeterminate={indeterminate} />
-
-        {/*
-          ALWAYS A NUMBER.
-
-          It used to read "Preparing…" through the decode, on the argument that
-          a Draco decode reports no progress so there is nothing honest to
-          print. But there is: `percent` holds at 95 there by construction — the
-          download is genuinely 95% of the wait — and a bar sitting just short of
-          full next to the figure 95% says exactly that. Swapping the number for
-          a word at the last moment reads as the count having failed, which is a
-          worse thing to believe than "nearly there".
-        */}
-        <VRText fontSize={TEXT.label} color={COLOR.muted} textAlign="center">
-          {`${percent}%`}
-        </VRText>
+        <Container
+          width="100%"
+          flexDirection="row"
+          alignItems="center"
+          gapColumn={SPACE.icon}
+          marginTop={SPACE.row}
+        >
+          <Container flexGrow={1} flexShrink={1}>
+            <ProgressBar percent={percent} />
+          </Container>
+          <VRText
+            fontSize={TEXT.label}
+            color={COLOR.muted}
+            width={56}
+            textAlign="right"
+          >
+            {`${percent}%`}
+          </VRText>
+        </Container>
       </Container>
     </VRFullscreen>
   );

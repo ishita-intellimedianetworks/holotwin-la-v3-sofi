@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type PropsWithChildren,
@@ -43,12 +44,6 @@ interface VenueLoad {
    * this anyway: both surfaces render "Loading 42%".
    */
   percent: number;
-  /**
-   * True when `percent` is meaningless — no `Content-Length`, which is the
-   * normal case behind a tunnel like ngrok. Both surfaces draw a moving bar
-   * with no number instead of a still one with a wrong number.
-   */
-  indeterminate: boolean;
   /** True once the bytes have arrived AND the model is decoded and on the GPU. */
   ready: boolean;
   /** Called by the decode probe once `useGLTF` has resolved for this venue. */
@@ -73,6 +68,25 @@ const LoadContext = createContext<VenueLoad | null>(null);
  */
 const DECODE_SHARE = 0.05;
 
+/**
+ * The creep: an eased climb toward 99% that the bar follows whenever there is
+ * no byte count to follow instead.
+ *
+ * The bar used to switch to a sweeping block in that case — honest, but it
+ * read as "nothing is happening" rather than as loading, and it is the case
+ * most loads hit. `1 - e^(-t/τ)` rises quickly and then slows, so it never
+ * reaches the end on its own: with τ at 6 s it is past half in ~4 s and still
+ * short of 90% at 13 s, which matches the one to fifteen seconds these venues
+ * take.
+ */
+const CREEP_TAU_S = 6;
+const CREEP_MAX = 99;
+const CREEP_TICK_MS = 100;
+
+function creepPercent(seconds: number): number {
+  return Math.round(CREEP_MAX * (1 - Math.exp(-seconds / CREEP_TAU_S)));
+}
+
 export function VenueLoadProvider({ children }: PropsWithChildren) {
   const venue = useVenue();
 
@@ -96,26 +110,50 @@ export function VenueLoadProvider({ children }: PropsWithChildren) {
     [venue.id],
   );
 
-  const percent = modelReady
-    ? 100
-    : Math.round((1 - DECODE_SHARE) * assets.fraction * 100);
-
   const ready = assets.ready && modelReady;
 
   /**
-   * The DECODE phase is always indeterminate, whatever the download was.
-   *
-   * Once the bytes are in there is genuinely nothing left to measure — three is
-   * inside a Draco decode that reports no progress — so a bar that had a real
-   * percentage during the download stops having one here. It holds at 95% and
-   * starts moving instead, which is the honest way to say "still working, no
-   * longer counting".
+   * A CREEP, so the bar always fills — see `creepPercent`. Stored with the
+   * venue it belongs to, for the same derived-reset reason as `decodedVenueId`.
    */
-  const indeterminate = (assets.indeterminate || assets.ready) && !ready;
+  const [creep, setCreep] = useState({ venueId: venue.id, value: 0 });
+  const creepValue = creep.venueId === venue.id ? creep.value : 0;
+
+  useEffect(() => {
+    if (ready) return;
+    const start = performance.now();
+    const id = window.setInterval(() => {
+      const value = creepPercent((performance.now() - start) / 1000);
+      setCreep((current) =>
+        current.venueId === venue.id && current.value >= value
+          ? current
+          : { venueId: venue.id, value },
+      );
+    }, CREEP_TICK_MS);
+    return () => window.clearInterval(id);
+  }, [ready, venue.id]);
+
+  /**
+   * ALWAYS A PROGRESSIVE NUMBER, never a sweep.
+   *
+   * The real byte fraction when there is one; otherwise — no `Content-Length`,
+   * which is the normal case behind `next start`'s gzip — the creep. Whichever
+   * is further along wins, so the bar only ever moves forward.
+   *
+   * Held under 95% until the bytes are in, and under 99% through the decode,
+   * which reports nothing: a bar at 100% is claiming to be finished.
+   */
+  const measured = assets.indeterminate
+    ? 0
+    : (1 - DECODE_SHARE) * assets.fraction * 100;
+  const cap = assets.ready ? 99 : (1 - DECODE_SHARE) * 100;
+  const percent = ready
+    ? 100
+    : Math.round(Math.min(cap, Math.max(measured, creepValue)));
 
   const value = useMemo<VenueLoad>(
-    () => ({ percent, indeterminate, ready, markModelReady }),
-    [percent, indeterminate, ready, markModelReady],
+    () => ({ percent, ready, markModelReady }),
+    [percent, ready, markModelReady],
   );
 
   return <LoadContext.Provider value={value}>{children}</LoadContext.Provider>;

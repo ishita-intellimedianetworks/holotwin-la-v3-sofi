@@ -15,23 +15,22 @@ import { VRText } from "../text";
 // slip through with an em dash in it.
 export function PanelTitle({ children }: { children: string }) {
   return (
-    <VRText fontSize={TEXT.heading} color={COLOR.text}>
+    <VRText fontSize={TEXT.heading} color={COLOR.text} fontWeight="bold">
       {children}
     </VRText>
   );
 }
 
 /**
- * The close control: a round disc, in the flow rather than absolute.
- *
- * A disc, not a square icon button, because a circular target has no dead
- * corners for a ray to land in. 56 px is ~3.2° of arc at panel distance.
+ * The close control: the flat panel's 30 px disc — `rgba(255,255,255,0.14)`
+ * with an `#E6EAEF` X — scaled for the headset. A disc because a circular
+ * target has no dead corners for a ray to land in.
  */
-const CLOSE_TARGET = 56;
-const CLOSE_GLYPH = 22;
+const CLOSE_TARGET = 52;
+const CLOSE_GLYPH = 24;
 
-/** Matches ROW_HEIGHT so a button and a row read as the same family. */
-const PRIMARY_HEIGHT = 56;
+/** The flat panel's `h-12` Start button, scaled. */
+const PRIMARY_HEIGHT = 72;
 
 export function CloseButton({ onClose }: { onClose: () => void }) {
   return (
@@ -48,11 +47,11 @@ export function CloseButton({ onClose }: { onClose: () => void }) {
        */
       pointerEventsOrder={POINTER_ORDER.overlay}
       borderRadius={RADIUS.dot}
-      backgroundColor={COLOR.danger}
+      backgroundColor={COLOR.closeFill}
       alignItems="center"
       justifyContent="center"
       cursor="pointer"
-      hover={{ backgroundColor: COLOR.dangerHover }}
+      hover={{ backgroundColor: COLOR.closeHover }}
       onPointerDown={onClose}
     >
       {/*
@@ -65,7 +64,7 @@ export function CloseButton({ onClose }: { onClose: () => void }) {
       <XIcon
         width={CLOSE_GLYPH}
         height={CLOSE_GLYPH}
-        color={COLOR.text}
+        color="#e6eaef"
         pointerEvents="none"
       />
     </Container>
@@ -73,13 +72,9 @@ export function CloseButton({ onClose }: { onClose: () => void }) {
 }
 
 /**
- * Back, in the same shape as close.
- *
- * A disc for the same reason that one is — no dead corners for a ray — and in
- * the panel's own palette rather than the danger red, because going back a step
- * is not the same promise as dismissing the whole thing. They sit at opposite
- * ends of the header so the two can never be pressed by accident for each
- * other.
+ * Back, in the same shape as close — the flat panel's hairline-ringed disc with
+ * a soft-white arrow. They sit at opposite ends of the header so the two can
+ * never be pressed by accident for each other.
  */
 function BackButton({ onBack }: { onBack: () => void }) {
   return (
@@ -89,13 +84,13 @@ function BackButton({ onBack }: { onBack: () => void }) {
       flexShrink={0}
       pointerEventsOrder={POINTER_ORDER.overlay}
       borderRadius={RADIUS.dot}
-      backgroundColor={COLOR.rowRest}
-      borderWidth={1}
+      backgroundColor={COLOR.panel}
+      borderWidth={2}
       borderColor={COLOR.rowBorder}
       alignItems="center"
       justifyContent="center"
       cursor="pointer"
-      hover={{ backgroundColor: COLOR.rowHover }}
+      hover={{ backgroundColor: COLOR.tile }}
       onPointerDown={onBack}
     >
       {/* Same reason as the close glyph: a child would otherwise swallow the
@@ -103,7 +98,7 @@ function BackButton({ onBack }: { onBack: () => void }) {
       <ArrowLeftIcon
         width={CLOSE_GLYPH}
         height={CLOSE_GLYPH}
-        color={COLOR.text}
+        color={COLOR.muted}
         pointerEvents="none"
       />
     </Container>
@@ -137,9 +132,12 @@ export function PanelHeader({
       width="100%"
       flexDirection="row"
       flexShrink={0}
-      alignItems="center"
+      // Top-aligned, as the flat header is: a two-line title grows downward
+      // while the discs stay level with its first line.
+      alignItems="flex-start"
       justifyContent="space-between"
       gap={SPACE.icon}
+      paddingX={SPACE.listX}
     >
       {onBack && <BackButton onBack={onBack} />}
       <Container
@@ -149,9 +147,11 @@ export function PanelHeader({
         flexDirection="column"
         gapRow={4}
       >
-        <PanelTitle>{title}</PanelTitle>
+        <Container minHeight={CLOSE_TARGET} alignItems="center">
+          <PanelTitle>{title}</PanelTitle>
+        </Container>
         {!!subtitle && (
-          <VRText fontSize={TEXT.label} color={COLOR.muted}>
+          <VRText fontSize={TEXT.body} color={COLOR.muted}>
             {subtitle}
           </VRText>
         )}
@@ -193,6 +193,7 @@ export function SectionLabel({
     >
       <VRText
         fontSize={TEXT.label}
+        fontWeight="semi-bold"
         color={indent ? COLOR.muted : COLOR.accentBright}
       >
         {children}
@@ -238,7 +239,7 @@ export function PrimaryButton({
       hover={{ backgroundColor: COLOR.accentHover }}
       onPointerDown={onSelect}
     >
-      <VRText fontSize={TEXT.body} color={COLOR.text}>
+      <VRText fontSize={TEXT.name} color="#ffffff" fontWeight="semi-bold">
         {label}
       </VRText>
     </Container>

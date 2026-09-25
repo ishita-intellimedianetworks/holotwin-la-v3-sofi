@@ -3,16 +3,17 @@
 import { Container } from "@react-three/uikit";
 import {
   BoxIcon,
-  BuildingIcon,
+  EyeOffIcon,
   HouseIcon,
   InfoIcon,
   LayoutGridIcon,
   LogOutIcon,
   MapIcon,
+  MapPinIcon,
 } from "@react-three/uikit-lucide";
 import type { XRStore } from "@react-three/xr";
 import { VENUES } from "@/components/vr/data";
-import { useVenue } from "@/components/vr/data/venue-provider";
+import { useVenueContext } from "@/components/vr/data/venue-provider";
 import { useVenueLoad } from "../load-progress";
 import { useVRState } from "../state";
 import { VRFullscreen } from "../ui/fullscreen";
@@ -39,8 +40,8 @@ import { COLOR, POINTER_ORDER, RADIUS, SPACE } from "../ui/tokens";
  * how you move, so switching works the same way before and during a session.
  */
 
-/** Matches the flat dock's white glyphs, sized for a 64 px disc. */
-const GLYPH = 26;
+/** About half the 76 px disc, as the ARCHVIZ reference draws its glyphs. */
+const GLYPH = 36;
 
 /**
  * How far up from the bottom of the field of view the dock sits.
@@ -108,9 +109,11 @@ export function VRToolbar({ store }: { store: XRStore }) {
     goToDollHouse,
     panelIsOpen,
     isTravelling,
+    barHidden,
+    setBarHidden,
   } = useVRState();
 
-  const venue = useVenue();
+  const { venue, switchPhase } = useVenueContext();
 
   /**
    * Never on screen at the same time as a panel, and never mid-glide.
@@ -141,7 +144,16 @@ export function VRToolbar({ store }: { store: XRStore }) {
    */
   const { ready } = useVenueLoad();
 
-  const hidden = panelIsOpen || isTravelling || !ready;
+  // `barHidden` is the player putting the dock away themselves; B or Y brings
+  // it back — see `../bar-toggle`.
+  const hidden =
+    panelIsOpen ||
+    isTravelling ||
+    !ready ||
+    barHidden ||
+    // Nothing but the black and the loading line during a venue change —
+    // including the settle after `ready`, while the black is still up.
+    switchPhase !== "idle";
 
   const isFirstPerson = view === "first-person";
 
@@ -232,7 +244,7 @@ export function VRToolbar({ store }: { store: XRStore }) {
               about the site, not about how you are looking at one building. */}
           {VENUES.length > 1 && (
             <IconButton
-              icon={glyph(BuildingIcon)}
+              icon={glyph(MapPinIcon)}
               onSelect={() => setOpenMenu("venues")}
             />
           )}
@@ -240,6 +252,13 @@ export function VRToolbar({ store }: { store: XRStore }) {
           <IconButton
             icon={glyph(InfoIcon)}
             onSelect={() => setOpenMenu("instructions")}
+          />
+
+          {/* Puts the whole dock away, for an unobstructed look. There is no
+              on-screen way back, so the way back is B or Y on a controller. */}
+          <IconButton
+            icon={glyph(EyeOffIcon)}
+            onSelect={() => setBarHidden(true)}
           />
 
           <IconButton

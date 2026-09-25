@@ -9,8 +9,8 @@ import {
 } from "@/components/vr/hooks/use-navmesh-collider";
 import { useVenue } from "@/components/vr/data/venue-provider";
 import { useVRState } from "../state";
+import { BarToggle } from "../bar-toggle";
 import { NavmeshClamp } from "../clamp";
-import { LoadingPanel } from "../loading-panel";
 import { DollHouse } from "../doll-house";
 import { VRBackdrop } from "../environment";
 import { Hotspots } from "../hotspots";
@@ -121,20 +121,19 @@ export function Session({ store, debug }: { store: XRStore; debug: boolean }) {
 
       {view === "doll-house" ? (
         /*
-          THE VENUE-SWAP WAIT LIVES HERE.
+          THE VENUE-SWAP WAIT IS NOT DRAWN HERE.
 
           Changing venue always lands back in the doll house (the state provider
           remounts, and `doll-house` is its initial view), and `DollHouse`
-          suspends on the model while it measures it. So this boundary is the
-          one a swap actually hits, and its fallback is the only thing standing
-          between the player and several seconds of empty black room with a dock
-          floating in it — which reads as a crash rather than as loading.
+          suspends on the model while it measures it. The wait is covered by
+          `../blackout`, which fades to black before the swap and draws the
+          loading line on the black until the venue is ready — so this fallback
+          is empty, or the line would be drawn twice.
 
-          The first load does not need it: the DOM gate is covering the view and
-          counting real bytes. This is for the second venue onwards, in-session,
-          where there is no gate to fall back to.
+          The first load does not need either: the DOM gate is covering the view
+          and counting real bytes.
         */
-        <Suspense fallback={<LoadingPanel title={venue.title} />}>
+        <Suspense fallback={null}>
           {/* Keyed by venue: the doll house measures the model to fit it to the
               table, and reconciling one building's bounds into another's would
               show a frame at the wrong scale. */}
@@ -160,6 +159,9 @@ export function Session({ store, debug }: { store: XRStore; debug: boolean }) {
 
       {/* Its own boundary, and separate from the menus': the dock is how you
           OPEN a menu, so it must not be suspended by one. */}
+      {/* B / Y brings a hidden dock back. */}
+      <BarToggle />
+
       <Suspense fallback={null}>
         <VRToolbar store={store} />
       </Suspense>

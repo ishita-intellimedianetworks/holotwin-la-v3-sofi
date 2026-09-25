@@ -48,8 +48,8 @@ function FastestEntry({ row }: { row: VRCrowdRow }) {
       backgroundColor={COLOR.rowActive}
     >
       <ZapIcon
-        width={22}
-        height={22}
+        width={28}
+        height={28}
         color={COLOR.accentBright}
         pointerEvents="none"
       />
@@ -73,13 +73,11 @@ function FastestEntry({ row }: { row: VRCrowdRow }) {
 
 export function CrowdPanel({
   rows,
-  venueTitle,
   onSelect,
   onBack,
   onClose,
 }: {
   rows: VRCrowdRow[];
-  venueTitle: string;
   /** Open the destination this reading belongs to, if it is one you can go to. */
   onSelect: (destinationId: string) => void;
   onBack: () => void;
@@ -95,8 +93,8 @@ export function CrowdPanel({
   return (
     <>
       <PanelHeader
-        title="Crowd"
-        subtitle={venueTitle}
+        title="Crowd Flow"
+        subtitle={`${rows.length} zones`}
         onBack={onBack}
         onClose={onClose}
       />

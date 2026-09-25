@@ -54,9 +54,33 @@ import { GlassSurface } from "../glass-surface";
  */
 const WIDTH_PER_HEIGHT = 2.2;
 
+/**
+ * ONE SIZE FOR EVERY POPUP, AND IT IS SQUARE.
+ *
+ * Panels used to pick their own — 40% to 46% wide, 46% to 80% tall — and the
+ * floor plan in particular came out as a tall column reaching from above the
+ * eyeline to well below it. The ARCHVIZ reference keeps its cards close to
+ * square and under a metre at 1.8 m. 46% of the height × `WIDTH_PER_HEIGHT` is
+ * ~1.0 of the height across, against a 48% ceiling — clearly wider than tall,
+ * which is how it reads in the lens (28% × 60% came out narrow and tall), so
+ * the card is as wide as it is tall at most. Anything longer scrolls inside it.
+ */
+const PANEL_WIDTH = "46%";
+export const PANEL_MAX_HEIGHT = "48%";
+
+/** A `VRPanel` width, resolved to uikit pixels against the viewport height. */
+export function panelWidthPx(
+  viewportHeight: number,
+  width: `${number}%` | number = PANEL_WIDTH,
+): number {
+  return typeof width === "string"
+    ? Math.round((parseFloat(width) / 100) * WIDTH_PER_HEIGHT * viewportHeight)
+    : width;
+}
+
 export function VRPanel({
   children,
-  width = "40%",
+  width = PANEL_WIDTH,
   height,
   maxHeight,
   surface = "glass",
@@ -105,10 +129,7 @@ export function VRPanel({
    */
   const viewportHeight = useThree((state) => state.size.height);
 
-  const resolvedWidth =
-    typeof width === "string"
-      ? Math.round((parseFloat(width) / 100) * WIDTH_PER_HEIGHT * viewportHeight)
-      : width;
+  const resolvedWidth = panelWidthPx(viewportHeight, width);
 
   return (
     <VRFullscreen
@@ -179,7 +200,7 @@ export function VRPanel({
           bar that looks broken on a list that looks complete. Capping well
           below the content gives a short thumb with obvious travel.
         */
-        maxHeight={height == null ? (maxHeight ?? "46%") : undefined}
+        maxHeight={height == null ? (maxHeight ?? PANEL_MAX_HEIGHT) : undefined}
         borderRadius={RADIUS.panel}
       >
         {/* The border stays either way — it is what gives a floating card an

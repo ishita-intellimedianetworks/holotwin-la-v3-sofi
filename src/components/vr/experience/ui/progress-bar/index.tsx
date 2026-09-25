@@ -1,111 +1,130 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { signal, type Signal } from "@preact/signals-core";
 import { Container } from "@react-three/uikit";
-import { COLOR, RADIUS } from "../tokens";
+import { RADIUS } from "../tokens";
 
 /**
- * A progress bar you can read from inside a headset.
+ * The loading line — the flat site's `HoloTwinHud` bar, drawn in the headset.
  *
- * TWO MODES, because there are two kinds of wait here and only one of them has
- * a number:
+ * The same look: a faint cyan track, a fill that runs from the site's cyan
+ * (#0fb7ff) to its mint (#00ffcc), and a soft glow around it — the CSS version's
+ * `box-shadow`. uikit has no shadows and no gradients, so both are built from
+ * layers: the glow is two wider, fainter copies of the fill behind it, and the
+ * gradient is a brighter head riding the leading edge.
  *
- *   determinate    bytes arriving against a known Content-Length — the fill is
- *                  the fraction, and it only moves forward.
- *   indeterminate  no Content-Length (a tunnel re-frames the response as
- *                  chunked), or a Draco decode, which reports nothing at all.
- *                  A short block sweeps the track instead.
- *
- * The indeterminate sweep is what makes this worth having in VR. A still bar
- * and a finished bar look identical through a headset lens, so a wait with no
- * measurable progress needs MOVEMENT to say it is still alive — otherwise the
- * honest answer ("I don't know how long") is indistinguishable from a hang.
+ * ALWAYS PROGRESSIVE. The number it is given only moves forward (see
+ * `../../load-progress`), and the drawn width EASES toward it rather than
+ * jumping, which is what the site's `transition: width 120ms` does. A load
+ * reads as a line growing, not as a counter ticking.
  */
 
-/** Track height in uikit units. Thicker than a DOM bar: this is read at 2 m. */
-const HEIGHT = 10;
+/** The line itself. Thicker than the site's 2 px: this is read at 2 m. */
+const LINE = 6;
 
-/** One full sweep of the indeterminate block, in seconds. */
-const SWEEP_SECONDS = 1.4;
+/** How far the glow spreads above and below the line, per layer. */
+const GLOW_NEAR = 6;
+const GLOW_FAR = 14;
 
-/** How much of the track the sweeping block covers. */
-const BLOCK = 0.3;
+/** The leading head — the brighter end of the gradient. */
+const HEAD = 0.18;
+
+/** How quickly the drawn width catches up with the real one, per second. */
+const EASE_RATE = 6;
+
+const CYAN = "#0fb7ff";
+const MINT = "#00ffcc";
 
 /**
  * A plain function outside the component: writing to a value that came out of a
  * hook trips `react-hooks/immutability`, which does not know a signal exists to
  * be written to.
  */
-function advance(offset: Signal<`${number}%`>, delta: number) {
-  const step = (delta / SWEEP_SECONDS) * (1 + BLOCK) * 100;
-  const current = parseFloat(offset.value);
-  const next = current + step;
-  // Off the right-hand end, back to just off the left-hand end.
-  offset.value = `${next > 100 ? -BLOCK * 100 : next}%`;
+function ease(
+  width: Signal<`${number}%`>,
+  shown: { value: number },
+  target: number,
+  delta: number,
+) {
+  const k = 1 - Math.exp(-EASE_RATE * delta);
+  shown.value += (target - shown.value) * k;
+  if (Math.abs(target - shown.value) < 0.05) shown.value = target;
+  width.value = `${shown.value}%`;
 }
 
-export function ProgressBar({
-  percent,
-  indeterminate = false,
-}: {
-  /** 0–100. Ignored when `indeterminate`. */
-  percent: number;
-  indeterminate?: boolean;
-}) {
+export function ProgressBar({ percent }: { /** 0–100. */ percent: number }) {
+  const target = Math.max(0, Math.min(100, percent));
+
   /**
-   * The sweep position is a preact SIGNAL, not React state.
-   *
-   * Every uikit property accepts one, and writing to it updates that property
-   * in place with no render and no relayout. Through `setState` an animation
-   * running at frame rate would cost a uikit layout pass every frame, in a view
-   * locked to the user's head — which is the one place a dropped frame is
-   * actually felt. `Spinner` does the same thing for the same reason.
+   * The drawn width is a preact SIGNAL, not React state: every uikit property
+   * accepts one and updates in place with no render or relayout. Through
+   * `setState` an animation at frame rate would cost a uikit layout pass every
+   * frame, in a view locked to the user's head.
    */
-  const offset = useMemo<Signal<`${number}%`>>(
-    () => signal(`${-BLOCK * 100}%`),
-    [],
-  );
+  const width = useMemo<Signal<`${number}%`>>(() => signal("0%"), []);
+  const shown = useRef({ value: 0 });
 
   useFrame((_, delta) => {
-    if (indeterminate) advance(offset, delta);
+    if (shown.current.value !== target)
+      ease(width, shown.current, target, delta);
   });
 
-  const clamped = Math.max(0, Math.min(100, percent));
+  /** One fill-shaped layer, positioned over the track's left end. */
+  const layer = (spread: number, color: string, opacity: number) => (
+    <Container
+      positionType="absolute"
+      positionLeft={0}
+      positionTop={-spread}
+      width={width}
+      height={LINE + spread * 2}
+      borderRadius={RADIUS.dot}
+      backgroundColor={color}
+      opacity={opacity}
+    />
+  );
 
   return (
     <Container
       width="100%"
-      height={HEIGHT}
+      height={LINE}
       flexShrink={0}
-      borderRadius={RADIUS.dot}
-      backgroundColor={COLOR.rowBorder}
-      // The fill is positioned against this and must not spill out of the
-      // rounded ends while it sweeps.
-      overflow="hidden"
-      // Decoration. It sits inside a panel that is already a ray target.
+      // Decoration. Nothing here is a target.
       pointerEvents="none"
     >
-      {indeterminate ? (
+      {/* The track: the site's `color-mix(… 12%, transparent)`. */}
+      <Container
+        positionType="absolute"
+        width="100%"
+        height="100%"
+        borderRadius={RADIUS.dot}
+        backgroundColor={CYAN}
+        opacity={0.16}
+      />
+
+      {/* The glow, far then near — the CSS `box-shadow: 0 0 12px`. */}
+      {layer(GLOW_FAR, CYAN, 0.12)}
+      {layer(GLOW_NEAR, CYAN, 0.28)}
+
+      {/* The line, with the mint head at its leading edge. */}
+      <Container
+        positionType="absolute"
+        positionLeft={0}
+        width={width}
+        height="100%"
+        borderRadius={RADIUS.dot}
+        backgroundColor={CYAN}
+        flexDirection="row"
+        justifyContent="flex-end"
+      >
         <Container
-          positionType="absolute"
-          positionLeft={offset}
-          width={`${BLOCK * 100}%`}
+          width={`${HEAD * 100}%`}
           height="100%"
           borderRadius={RADIUS.dot}
-          backgroundColor={COLOR.accentBright}
+          backgroundColor={MINT}
         />
-      ) : (
-        <Container
-          // A cast because a template literal over a number widens to `string`,
-          // while uikit's percentage props are typed as `${number}%`.
-          width={`${clamped}%` as `${number}%`}
-          height="100%"
-          borderRadius={RADIUS.dot}
-          backgroundColor={COLOR.accentBright}
-        />
-      )}
+      </Container>
     </Container>
   );
 }

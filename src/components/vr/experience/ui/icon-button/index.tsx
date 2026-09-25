@@ -9,10 +9,10 @@ import { COLOR, RADIUS } from "../tokens";
  *
  * Round, because a circular target has no dead corners for a ray to land in.
  *
- * 64 px, where the flat dock's is 44: that is ~3.7° at panel distance,
- * comfortably clear of `MIN_TARGET_DEGREES`. A mouse is not a hand-held ray.
+ * 76 px, where the flat dock's is 44: about the ~4° the ARCHVIZ reference's
+ * 14 cm buttons subtend at 2 m. 64 px read as small in the headset.
  */
-const SIZE = 64;
+const SIZE = 76;
 
 export function IconButton({
   icon,

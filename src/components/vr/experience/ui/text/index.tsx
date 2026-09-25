@@ -113,7 +113,17 @@ export function toAtlasSafe(input: string): string {
  */
 export function VRText({
   children,
+  fontWeight = "medium",
   ...props
 }: Omit<ComponentProps<typeof Text>, "children"> & { children: string }) {
-  return <Text {...props}>{toAtlasSafe(children)}</Text>;
+  /**
+   * MEDIUM BY DEFAULT. Inter's regular weight is a hairline stroke once it is
+   * sampled through a headset lens at 2 m, and it thins further against a
+   * bright venue. One step heavier is what keeps body copy legible.
+   */
+  return (
+    <Text fontWeight={fontWeight} {...props}>
+      {toAtlasSafe(children)}
+    </Text>
+  );
 }

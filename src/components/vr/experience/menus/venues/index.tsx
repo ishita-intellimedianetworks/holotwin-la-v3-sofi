@@ -1,7 +1,7 @@
 "use client";
 
-import { BuildingIcon } from "@react-three/uikit-lucide";
-import { SITE_LABEL, VENUES } from "@/components/vr/data";
+import { MapPinIcon } from "@react-three/uikit-lucide";
+import { VENUES } from "@/components/vr/data";
 import { VRPanel } from "../../ui/panel";
 import { PanelList } from "../../ui/panel-list";
 import { MenuRow } from "../../ui/menu-row";
@@ -37,7 +37,7 @@ export function VenuesMenu({
 }) {
   return (
     <VRPanel onDismiss={onClose}>
-      <PanelHeader title="Venues" subtitle={SITE_LABEL} onClose={onClose} />
+      <PanelHeader title="Choose a venue to explore" onClose={onClose} />
 
       <PanelList>
         {VENUES.length === 0 ? (
@@ -52,8 +52,8 @@ export function VenuesMenu({
               active={venue.id === activeVenueId}
               detail={venue.id === activeVenueId ? "Here" : undefined}
               icon={
-                <BuildingIcon
-                  width={18}
+                <MapPinIcon
+                  width={24}
                   color={
                     venue.id === activeVenueId
                       ? COLOR.accentBright

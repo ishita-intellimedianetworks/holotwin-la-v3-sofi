@@ -12,52 +12,48 @@ import {
   useNavmeshCollider,
 } from "@/components/vr/hooks/use-navmesh-collider";
 import { useVRState } from "../state";
+import { FadeQuad, setFadeOpacity } from "../blackout/fade-quad";
 
 /**
- * Performs the glide described by `moveToLocation`.
+ * Performs the trip described by `moveToLocation` — AS A TELEPORT.
  *
  * The store holds the INTENT and this component carries it out and clears it,
  * so everything else can ask "are we travelling?" from state alone, with no
  * callbacks threaded through the tree.
  *
- * A GLIDE, NOT A CUT. A hard jump is the more comfortable option in most VR
- * guidance and it is the wrong one here: the venues are large and mostly
- * symmetrical — one stadium concourse looks much like the next — so a cut
- * leaves the player with no idea which way they have been turned or how far
- * they have come. Moving them through the space keeps the journey legible. The
- * per-venue duration (see `data`) is what keeps the speed tolerable: the same
- * two seconds that crosses a hotel room would cross the stadium at 400 m/s.
+ * A SHORT BLACKOUT, THEN A CUT. It used to fly the camera through the venue
+ * to the destination — a moving camera the player is not driving is the
+ * classic VR comfort problem. Now the view dips to black, the player is placed
+ * at the destination while it is black, and the view comes back up there: the
+ * same dip the venue change uses, only brief.
  *
  * HEAD-ACCURATE LANDING. Under room-scale the origin is the guardian's centre,
  * not the player, so setting it to the target lands them a metre off. The
- * destination origin is solved once at departure:
+ * destination origin is solved from the head:
  *
  *     originTarget = target − R(Δyaw) · (head − origin)
- *
- * Once, because recomputing mid-flight chases itself: the head moves with the
- * origin it is measured against.
  */
-
-/** Cosine ease — no abrupt start or stop. */
-const ease = (t: number) =>
-  0.5 - 0.5 * Math.cos(Math.PI * THREE.MathUtils.clamp(t, 0, 1));
 
 const _head = new THREE.Vector3();
 
-interface Trip {
-  fromPos: THREE.Vector3;
-  toPos: THREE.Vector3;
-  fromYaw: number;
-  toYaw: number;
-  elapsed: number;
-  duration: number;
-}
+/** Seconds to fade to black, and back. */
+const DIP_OUT = 0.18;
+const DIP_IN = 0.3;
+/**
+ * Frames held fully black after the move, so the first frame drawn at the
+ * destination — often a slow one, with new geometry in view — is never seen.
+ */
+const DIP_HOLD_FRAMES = 3;
+
+/** Under every panel (1000), over the venue. */
+const DIP_RENDER_ORDER = 900;
+
+type DipPhase = "idle" | "out" | "in";
 
 export function TeleportDriver() {
   const { originRef, moveToLocation, finishTeleport, standingLiftRef } =
     useVRState();
   const camera = useThree((state) => state.camera);
-  const trip = useRef<Trip | null>(null);
 
   /**
    * THE LANDING IS SNAPPED ONTO WALKABLE GROUND, and that is a fix rather than
@@ -81,18 +77,43 @@ export function TeleportDriver() {
   const { collider, centroids } = useNavmeshCollider();
 
   const venue = useVenue();
-  const seconds = venue.locomotion.teleportSeconds;
   const groundOffset = venue.groundOffset;
 
   /** Identity, not value: `teleportTo` makes a new object every call, so the
    *  same layout chosen twice is still a new trip. */
   const plannedFor = useRef<typeof moveToLocation>(null);
 
+  const quad = useRef<THREE.Mesh>(null);
+  const dip = useRef<{ phase: DipPhase; opacity: number; hold: number }>({
+    phase: "idle",
+    opacity: 0,
+    hold: 0,
+  });
+
   useFrame((_, delta) => {
     const origin = originRef.current;
+    const d = dip.current;
+
+    // ── The fade back in, after the move ──
+    if (d.phase === "in") {
+      if (d.hold > 0) {
+        d.hold -= 1;
+      } else {
+        d.opacity = Math.max(0, d.opacity - delta / DIP_IN);
+        if (d.opacity === 0) {
+          d.phase = "idle";
+          finishTeleport();
+        }
+      }
+    }
+    if (quad.current) {
+      setFadeOpacity(
+        quad.current,
+        THREE.MathUtils.smootherstep(d.opacity, 0, 1),
+      );
+    }
 
     if (!moveToLocation) {
-      trip.current = null;
       plannedFor.current = null;
       return;
     }
@@ -106,9 +127,18 @@ export function TeleportDriver() {
      */
     if (!origin) return;
 
+    // ── A new trip starts the fade to black ──
     if (plannedFor.current !== moveToLocation) {
       plannedFor.current = moveToLocation;
+      d.phase = "out";
+    }
 
+    if (d.phase !== "out") return;
+    d.opacity = Math.min(1, d.opacity + delta / DIP_OUT);
+    if (d.opacity < 1) return;
+
+    // ── Fully black: place the player ──
+    {
       const targetYaw = THREE.MathUtils.degToRad(moveToLocation.rotationY);
       const deltaYaw = targetYaw - origin.rotation.y;
 
@@ -218,41 +248,20 @@ export function TeleportDriver() {
       const toY =
         exactY ?? (ground ?? hintY) + groundOffset + standingLiftRef.current;
 
-      trip.current = {
-        fromPos: origin.position.clone(),
-        toPos: new THREE.Vector3(
-          toX - (offX * cos + offZ * sin),
-          toY,
-          toZ - (-offX * sin + offZ * cos),
-        ),
-        fromYaw: origin.rotation.y,
-        toYaw: targetYaw,
-        elapsed: 0,
-        duration: Math.max(0.01, seconds),
-      };
-    }
+      origin.position.set(
+        toX - (offX * cos + offZ * sin),
+        toY,
+        toZ - (-offX * sin + offZ * cos),
+      );
+      origin.rotation.y = targetYaw;
 
-    const current = trip.current;
-    if (!current) return;
-
-    current.elapsed += delta;
-    const t = ease(current.elapsed / current.duration);
-
-    origin.position.lerpVectors(current.fromPos, current.toPos, t);
-
-    // Shortest way round, so 170° → -170° turns 20°, not 340°.
-    let turn = current.toYaw - current.fromYaw;
-    turn = Math.atan2(Math.sin(turn), Math.cos(turn));
-    origin.rotation.y = current.fromYaw + turn * t;
-
-    if (current.elapsed >= current.duration) {
-      origin.position.copy(current.toPos);
-      origin.rotation.y = current.toYaw;
-      trip.current = null;
-      plannedFor.current = null;
-      finishTeleport();
+      // Back up from black. `finishTeleport` waits for the fade to end, so
+      // everything that stands down while travelling stays down until the
+      // view is back.
+      d.phase = "in";
+      d.hold = DIP_HOLD_FRAMES;
     }
   });
 
-  return null;
+  return <FadeQuad meshRef={quad} renderOrder={DIP_RENDER_ORDER} />;
 }

@@ -10,21 +10,16 @@ import {
   occupancy,
 } from "@/components-v5/shared/timetable";
 import type { VRLayout } from "@/components/vr/data";
-import type { TransportDestination } from "@/components-v5/shared/types";
-import { PanelList } from "../ui/panel-list";
-import { MenuRow } from "../ui/menu-row";
-import { PanelHeader, PrimaryButton } from "../ui/panel-parts";
 import { VRText } from "../ui/text";
 import { COLOR, RADIUS, SPACE, TEXT } from "../ui/tokens";
-import { Prose } from "./parts";
 
 /**
- * Where you can get to from here, and what to catch.
+ * A transport hub's departures board, drawn on the hub's own place card (see
+ * `./place-detail`). The board is the hub's `transit.routes`, which reach VR on
+ * the layout for the hub itself.
  *
- * TWO LISTS, ONE BOARD. The venues are `transportDestinations` in
- * `scenes.json` — places elsewhere in the city, each naming the hub you board
- * at. The board is that hub's own `transit.routes`, which reach VR on the
- * layout for the hub itself.
+ * There used to be a separate "Transport" list of onward venues as well; for
+ * the village that was the one bus stop listed a second time, so it went.
  *
  * The countdown is `nextInMin` from the flat site, unchanged: a stable per-route
  * phase hashed from its name, so two routes on the same headway do not depart
@@ -90,7 +85,7 @@ function Occupancy({ seats }: { seats: number | undefined }) {
 }
 
 /** The departures board for one hub. */
-function Timetable({ hub, now }: { hub: VRLayout; now: number }) {
+export function Timetable({ hub, now }: { hub: VRLayout; now: number }) {
   /**
    * Soonest first. The fallback is inside the memo rather than above it: an
    * `?? []` in the component body is a new array on every render, which would
@@ -164,106 +159,6 @@ function Timetable({ hub, now }: { hub: VRLayout; now: number }) {
           </Container>
         </Container>
       ))}
-    </>
-  );
-}
-
-export function TransportPanel({
-  venues,
-  hubs,
-  venueTitle,
-  now,
-  selected,
-  onSelect,
-  onTravelToHub,
-  onBack,
-  onClose,
-}: {
-  venues: TransportDestination[];
-  /** The hub layouts in this venue, by POI id — what `hubId` points at. */
-  hubs: Map<string, VRLayout>;
-  venueTitle: string;
-  now: number;
-  /** The chosen venue, or null while the list is showing. */
-  selected: TransportDestination | null;
-  onSelect: (venue: TransportDestination | null) => void;
-  onTravelToHub: (hub: VRLayout) => void;
-  onBack: () => void;
-  onClose: () => void;
-}) {
-  const hub = selected ? (hubs.get(selected.hubId) ?? null) : null;
-
-  if (selected) {
-    return (
-      <>
-        <PanelHeader
-          title={selected.label}
-          subtitle={selected.sport ?? "Transit"}
-          onBack={() => onSelect(null)}
-          onClose={onClose}
-        />
-
-        <PanelList align="flex-start">
-          {selected.lines.length > 0 && (
-            <Prose muted>
-              {`Board ${selected.lines.map((line) => line.name).join(" or ")}${
-                hub ? ` at ${hub.title}` : ""
-              }.`}
-            </Prose>
-          )}
-
-          {hub ? (
-            <Timetable hub={hub} now={now} />
-          ) : (
-            <Prose muted>
-              The boarding point for this service is not mapped in this venue.
-            </Prose>
-          )}
-        </PanelList>
-
-        {hub && (
-          <Container width="100%" flexShrink={0} paddingX={SPACE.listX}>
-            <PrimaryButton
-              label="Go to the stop"
-              onSelect={() => onTravelToHub(hub)}
-              fullWidth
-            />
-          </Container>
-        )}
-      </>
-    );
-  }
-
-  return (
-    <>
-      <PanelHeader
-        title="Transport"
-        subtitle={venueTitle}
-        onBack={onBack}
-        onClose={onClose}
-      />
-
-      <PanelList>
-        {venues.length === 0 ? (
-          <VRText fontSize={TEXT.body} color={COLOR.muted}>
-            No onward services are listed from this venue.
-          </VRText>
-        ) : (
-          venues.map((venue) => (
-            <MenuRow
-              key={venue.id}
-              label={venue.label}
-              detail={venue.sport}
-              /*
-                A venue the data marks unreachable still opens — its card says
-                what would serve it. Refusing the press would leave a row that
-                looks broken rather than one that explains itself.
-              */
-              onSelect={() => onSelect(venue)}
-            />
-          ))
-        )}
-      </PanelList>
     </>
   );
 }

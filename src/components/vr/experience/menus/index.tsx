@@ -21,9 +21,10 @@ export function VRMenus() {
     openMenu: open,
     setOpenMenu,
     goToDollHouse,
+    barHidden,
   } = useVRState();
 
-  const { venueId, setVenue } = useVenueContext();
+  const { venueId, switchVenue, switchPhase } = useVenueContext();
   const { ready } = useVenueLoad();
 
   const close = () => setOpenMenu(null);
@@ -44,6 +45,13 @@ export function VRMenus() {
    */
   if (!ready) return null;
 
+  // Nothing over the blackout while a venue change is under way.
+  if (switchPhase !== "idle") return null;
+
+  // Put away with the dock. Hiding already closes the open menu; this makes it
+  // a fact about the tree rather than about that one setter.
+  if (barHidden) return null;
+
   /**
    * First-person-only panels are gated on the view too. The dock already hides
    * their buttons in the doll house, but this makes it a fact about the tree
@@ -60,16 +68,18 @@ export function VRMenus() {
       <VenuesMenu
         activeVenueId={venueId}
         onSelect={(id) => {
-          setVenue(id);
           /**
-           * Back to the doll house on the way in. `setVenue` re-keys the state
-           * provider, which resets the view on its own — this is here for the
-           * one case that does not remount: picking the venue you are already
-           * in, where `setVenue` is a deliberate no-op. Without it that press
-           * would close the menu and leave you where you were, which reads as
-           * the button not working.
+           * A different venue fades to black, swaps and loads on the black —
+           * see `../blackout`. The swap re-keys the state provider, which
+           * lands in the doll house on its own.
+           *
+           * The venue you are already in does not switch, so it goes back to
+           * the doll house directly. Without that the press would close the
+           * menu and leave you where you were, which reads as the button not
+           * working.
            */
-          goToDollHouse();
+          if (switchVenue(id)) close();
+          else goToDollHouse();
         }}
         onClose={close}
       />

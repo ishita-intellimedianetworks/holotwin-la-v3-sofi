@@ -49,4 +49,16 @@ export const store = createXRStore({
    * because it softens the menu text, which foveation does not.
    */
   frameRate: "low",
+
+  /**
+   * NO BROWSER-OWNED "ENTER VR" BUTTON.
+   *
+   * By default the store calls `navigator.xr.offerSession()` the moment the
+   * Canvas mounts, and Quest Browser answers by putting its own Enter VR button
+   * in the toolbar — long before the venue has loaded. Pressing it drops you
+   * into an empty scene, skips `onEnterVrClick` (so the exit-reload handler is
+   * never attached), and on a Quest 3 offers `immersive-ar` rather than VR. The
+   * only way in is our button, which appears once loading is done.
+   */
+  offerSession: false,
 });

@@ -54,13 +54,11 @@ const PLOT_HEIGHT_SHARE = 0.28;
 
 export function SeatMapPanel({
   seats,
-  venueTitle,
   onSelect,
   onBack,
   onClose,
 }: {
   seats: VRLayout[];
-  venueTitle: string;
   onSelect: (seat: VRLayout) => void;
   onBack: () => void;
   onClose: () => void;
@@ -100,8 +98,8 @@ export function SeatMapPanel({
   return (
     <>
       <PanelHeader
-        title="Seat views"
-        subtitle={venueTitle}
+        title="Seat Views"
+        subtitle={`${seats.length} views`}
         onBack={onBack}
         onClose={onClose}
       />

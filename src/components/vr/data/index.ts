@@ -28,6 +28,7 @@ import type {
   TransportDestination,
 } from "@/components-v5/shared/types";
 import { crowdRank } from "@/components-v5/shared/crowd-display";
+import { CATEGORY_INFO_BY_KEY } from "@/components-v5/shared/categories";
 
 type V3 = [number, number, number];
 
@@ -345,34 +346,6 @@ export interface VRVenue {
 }
 
 /**
- * What each POI category is called in the menus.
- *
- * The keys are `scenes.json`'s own, which are terse and inconsistent by
- * category — "eventupdates" and "infra" sit next to "seating". A row that says
- * "Infra" is a row nobody presses.
- */
-const GROUP_LABELS: Partial<Record<DestinationCategory, string>> = {
-  restaurants: "Food & Drink",
-  practice: "Practice Venues",
-  transport: "Transport",
-  wellness: "Wellness",
-  hostel: "Accommodation",
-  entrance: "Entrances",
-  seating: "Seat Views",
-  accessibility: "Accessibility",
-  discovery: "Discover",
-  transit: "Transit",
-  cctv: "Security",
-  services: "Services",
-  seatviews: "Seat Views",
-  safety: "Safety & Exits",
-  layouts: "Gates & Facilities",
-  crowdflow: "Crowd Flow",
-  eventupdates: "Event Updates",
-  infra: "Infrastructure",
-};
-
-/**
  * Categories that are NOT places to stand.
  *
  * `scenes.json` files a few things under `pois` that are notices rather than
@@ -388,8 +361,13 @@ const GROUP_LABELS: Partial<Record<DestinationCategory, string>> = {
  */
 const NOT_A_DESTINATION = new Set(["eventupdates", "crowdflow"]);
 
+/**
+ * What each POI category is called — THE 3D SITE'S OWN NAME for it, from the
+ * shared table its panels read (`components-v5/shared/categories.ts`), so a
+ * category is "Layouts & Wayfinding" here exactly as it is on /lighting.
+ */
 export const categoryLabel = (key: string): string =>
-  GROUP_LABELS[key as DestinationCategory] ??
+  CATEGORY_INFO_BY_KEY[key as DestinationCategory]?.label ??
   key.charAt(0).toUpperCase() + key.slice(1);
 
 /**

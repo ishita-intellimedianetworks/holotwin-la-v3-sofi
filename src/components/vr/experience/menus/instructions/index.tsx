@@ -4,12 +4,13 @@ import type { ReactNode } from "react";
 import { Container } from "@react-three/uikit";
 import {
   BoxIcon,
-  BuildingIcon,
+  EyeOffIcon,
   HouseIcon,
   InfoIcon,
   LayoutGridIcon,
   LogOutIcon,
   MapIcon,
+  MapPinIcon,
 } from "@react-three/uikit-lucide";
 import { useVenue } from "@/components/vr/data/venue-provider";
 import { VENUES } from "@/components/vr/data";
@@ -41,10 +42,10 @@ import { VRText } from "../../ui/text";
  */
 
 /** Matches the dock's glyphs, scaled to sit inside a row. */
-const GLYPH = 20;
+const GLYPH = 26;
 
 /** The chip the icon sits in — round, like the dock's discs. */
-const CHIP = 34;
+const CHIP = 46;
 
 /**
  * What the control column has to itself.
@@ -53,7 +54,7 @@ const CHIP = 34;
  * Fixed rather than sized to content so every description shares a left edge —
  * a ragged second column is what makes a table read as a list again.
  */
-const CONTROL_COL = 176;
+const CONTROL_COL = 196;
 
 /** One row: the control, then what it does. */
 function Row({ control, children }: { control: ReactNode; children: string }) {
@@ -100,6 +101,7 @@ function Row({ control, children }: { control: ReactNode; children: string }) {
  * a hairline, which is what the dock's discs look like on their glass. Drawn
  * this way the row and the button are recognisably one thing.
  */
+
 const button = (Icon: typeof HouseIcon) => (
   <Container
     width={CHIP}
@@ -145,8 +147,7 @@ export function InstructionsMenu({
    * hotel room has no POIs at all, so it has neither button, and naming them
    * sends someone hunting for something that was never there.
    */
-  const hasDestinations =
-    venue.layouts.length + venue.hotspots.length > 0;
+  const hasDestinations = venue.layouts.length + venue.hotspots.length > 0;
   const hasPlan = !!venue.floorPlan;
   const hasVenues = VENUES.length > 1;
 
@@ -157,7 +158,7 @@ export function InstructionsMenu({
     // fixed height sized for the longest leaves the shortest with a third of
     // its card empty. A panel with a hole in the bottom of it reads as
     // something that failed to load.
-    <VRPanel maxHeight="62%" onDismiss={onDismiss}>
+    <VRPanel onDismiss={onDismiss}>
       {/*
         A CENTRED TITLE, not the shared `PanelHeader`. That component is a row —
         title left, close disc right — and this is the one panel with no close
@@ -210,9 +211,7 @@ export function InstructionsMenu({
               not listed: aiming and turning would fight each other, and there
               is nothing in this view to turn.
             */}
-            <Row control={stick("Left stick ← →")}>
-              Spin the model round
-            </Row>
+            <Row control={stick("Left stick ← →")}>Spin the model round</Row>
             <Row control={stick("Left stick ↑ ↓")}>
               Tip it towards you or away
             </Row>
@@ -238,7 +237,7 @@ export function InstructionsMenu({
         */}
         {isFirstPerson && hasDestinations && (
           <Row control={button(LayoutGridIcon)}>
-            Everywhere in this venue, and what is happening
+            Resources - every place in this venue, by category
           </Row>
         )}
 
@@ -253,10 +252,13 @@ export function InstructionsMenu({
         )}
 
         {hasVenues && (
-          <Row control={button(BuildingIcon)}>Move to another venue</Row>
+          <Row control={button(MapPinIcon)}>Move to another venue</Row>
         )}
 
         <Row control={button(InfoIcon)}>Show this again</Row>
+        <Row control={button(EyeOffIcon)}>
+          Hide the bar — B or Y brings it back
+        </Row>
         <Row control={button(LogOutIcon)}>Leave VR</Row>
       </PanelList>
 

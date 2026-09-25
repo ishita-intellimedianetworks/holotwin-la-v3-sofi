@@ -15,6 +15,13 @@ export interface HoloTwinHudProps {
    *  the preview-less path: there the scene behind is NOT progress-synced and
    *  thinning would flash it through while the bar is still filling. */
   revealVeil?: boolean;
+  /** Drive the bar from outside (0..100) instead of the shared progress
+   *  store. The VR gate uses this — its download is tracked by its own hook,
+   *  and nothing there writes `revealProgress`. */
+  percentOverride?: number;
+  /** No measurable length (a chunked response, a decode that reports
+   *  nothing): sweep the bar and hide the number. Only with `percentOverride`. */
+  indeterminate?: boolean;
 }
 
 /**
@@ -32,6 +39,8 @@ export const HoloTwinHud: React.FC<HoloTwinHudProps> = ({
   onFadeComplete,
   unitName,
   revealVeil = false,
+  percentOverride,
+  indeterminate = false,
 }) => {
   // Bar reads the SHARED smoothed reveal value from the progress store so the
   // HUD bar fills in lockstep with the in-scene glow → fade animation. If we
@@ -40,7 +49,7 @@ export const HoloTwinHud: React.FC<HoloTwinHudProps> = ({
   // (The `progress` prop is still accepted for API compatibility but ignored.)
   const revealProgress = useProgressStore((s) => s.revealProgress);
   void _ignoredProgress;
-  const percent = Math.round(revealProgress * 100);
+  const percent = Math.round(percentOverride ?? revealProgress * 100);
 
   // Background veil over the canvas. The point cloud's density tracks the RAW
   // download progress (see ScenePreview), so the veil thins with the same raw
@@ -98,9 +107,21 @@ export const HoloTwinHud: React.FC<HoloTwinHudProps> = ({
     </div>
     <div className="htl-progress">
       <div className="htl-progress-track">
-        <div className="htl-progress-fill" style={{ width: `${percent}%` }} />
+        {indeterminate ? (
+          <>
+            <style>
+              {"@keyframes htl-sweep{0%{transform:translateX(-100%)}100%{transform:translateX(400%)}}"}
+            </style>
+            <div
+              className="htl-progress-fill"
+              style={{ width: '25%', animation: 'htl-sweep 1.4s ease-in-out infinite' }}
+            />
+          </>
+        ) : (
+          <div className="htl-progress-fill" style={{ width: `${percent}%` }} />
+        )}
       </div>
-        <span className="htl-percent">{percent}%</span>
+        {!indeterminate && <span className="htl-percent">{percent}%</span>}
     </div>
   </div>
 

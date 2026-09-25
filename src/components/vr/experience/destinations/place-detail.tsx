@@ -6,6 +6,7 @@ import { PanelList } from "../ui/panel-list";
 import { PanelHeader, PrimaryButton } from "../ui/panel-parts";
 import { SPACE } from "../ui/tokens";
 import { Bullet, ChipRow, CrowdLine, Prose, Stat } from "./parts";
+import { Timetable } from "./transport-panel";
 
 /**
  * One destination, in full — the flat site's directions card.
@@ -26,6 +27,7 @@ export function PlaceDetail({
   place,
   distance,
   eta,
+  now,
   onTravel,
   onBack,
   onClose,
@@ -35,6 +37,8 @@ export function PlaceDetail({
   distance: string;
   /** Walking time over that distance, already formatted. */
   eta: string;
+  /** The clock the departures are counted from, for a transport hub. */
+  now: number;
   onTravel: () => void;
   onBack: () => void;
   onClose: () => void;
@@ -42,8 +46,8 @@ export function PlaceDetail({
   return (
     <>
       <PanelHeader
+        // The site's directions view: the place's name, no subtitle.
         title={place.title}
-        subtitle={place.option ?? place.group}
         onBack={onBack}
         onClose={onClose}
       />
@@ -70,10 +74,21 @@ export function PlaceDetail({
 
         {!!place.note && <Prose>{place.note}</Prose>}
 
+        {/*
+          A transport hub carries its own departures board, right here on its
+          card. This replaced a separate "Transport" entry at the top of the
+          list, which for the village was one bus stop listed twice.
+        */}
+        <Timetable hub={place} now={now} />
+
         {/* Restaurants author a few sample dishes; practice venues their
             sports. Both are lists of short names and read as bullets. */}
-        {place.menu?.map((item) => <Bullet key={item}>{item}</Bullet>)}
-        {place.sports?.map((sport) => <Bullet key={sport}>{sport}</Bullet>)}
+        {place.menu?.map((item) => (
+          <Bullet key={item}>{item}</Bullet>
+        ))}
+        {place.sports?.map((sport) => (
+          <Bullet key={sport}>{sport}</Bullet>
+        ))}
 
         {place.open === false && (
           <Prose muted>This location is closed right now.</Prose>

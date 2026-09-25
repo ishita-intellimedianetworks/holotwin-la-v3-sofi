@@ -56,8 +56,8 @@ const KIND_GLYPH: Record<NoticeKindKey, Glyph> = {
 };
 
 /** The icon tile beside each notice, sized to sit level with two lines. */
-const TILE = 44;
-const GLYPH = 22;
+const TILE = 52;
+const GLYPH = 28;
 
 function Notice({
   notice,
@@ -142,13 +142,11 @@ function Notice({
 
 export function NoticesPanel({
   notices,
-  venueTitle,
   onTravel,
   onBack,
   onClose,
 }: {
   notices: VRNotice[];
-  venueTitle: string;
   onTravel: (notice: VRNotice) => void;
   onBack: () => void;
   onClose: () => void;
@@ -156,8 +154,8 @@ export function NoticesPanel({
   return (
     <>
       <PanelHeader
-        title="Event updates"
-        subtitle={venueTitle}
+        title="Event Updates"
+        subtitle={`${notices.length} updates`}
         onBack={onBack}
         onClose={onClose}
       />
@@ -172,9 +170,7 @@ export function NoticesPanel({
             <Notice
               key={notice.id}
               notice={notice}
-              onSelect={
-                notice.camera ? () => onTravel(notice) : undefined
-              }
+              onSelect={notice.camera ? () => onTravel(notice) : undefined}
             />
           ))
         )}

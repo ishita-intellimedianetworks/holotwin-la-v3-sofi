@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { SITE_LABEL } from "@/components/vr/data";
+import { HoloTwinHud } from "@/components-v5/shared/ui/molecules/loading-screen";
 
 /**
  * The gate in front of a VR session: one venue, one download, one button.
@@ -42,14 +43,11 @@ const HeadsetIcon = () => (
 export function EnterVROverlay({
   onEnter,
   isInVrSession,
-  venueTitle,
   error,
   progress,
 }: {
   onEnter: () => void;
   isInVrSession: boolean;
-  /** The venue the session will open in — named, not chosen. */
-  venueTitle: string;
   /** Set when a headset was found but the session still failed to start. */
   error?: string | null;
   /**
@@ -61,7 +59,7 @@ export function EnterVROverlay({
    * the wire — a black void that fills in around you, or does not. Waiting is
    * the honest behaviour, and a bar is what makes waiting legible.
    */
-  progress: { percent: number; indeterminate: boolean; ready: boolean };
+  progress: { percent: number; ready: boolean };
 }) {
   /**
    * "No WebXR at all" is knowable on the first render, so it is answered there.
@@ -96,103 +94,50 @@ export function EnterVROverlay({
   if (isInVrSession) return null;
 
   const downloading = !progress.ready;
-  const { percent, indeterminate } = progress;
+  const { percent } = progress;
 
   return (
     <Fragment>
-      <div className="fixed inset-0 z-[20000] bg-black/85 backdrop-blur-sm" />
-      <div className="fixed inset-0 z-[20001] flex items-center justify-center p-6">
-        <div className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
-          <div className="flex flex-col items-center gap-6 px-8 py-10 text-center">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-cyan-400/15 text-cyan-300">
-              <HeadsetIcon />
-            </span>
+      {/*
+        THE SAME LOADER AS THE 3D SITE, so arriving at /vr looks like arriving
+        anywhere else on it. Fed from this gate's own download hook — nothing
+        here writes the flat site's progress store. Kept mounted and faded by
+        `visible` rather than unmounted, so it goes out with the site's usual
+        0.35 s fade instead of vanishing.
 
-            <div className="flex flex-col items-center gap-2">
-              <span className="font-[family-name:var(--font-saira)] text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-300">
-                VR Experience
-              </span>
-              <h1 className="font-[family-name:var(--font-saira)] text-2xl font-semibold leading-tight text-white">
-                {SITE_LABEL}
-              </h1>
-              {/* Which venue is loading. It is not a choice here, so it reads
-                  as a statement rather than a control — but it still has to be
-                  said, or the bar is counting bytes for something unnamed. */}
-              <p className="text-sm text-slate-400">{venueTitle}</p>
-            </div>
+        It still REPLACES THE BUTTON: the popup below does not exist until the
+        download is done, so there is never an Enter VR to press into a venue
+        that is still coming down the wire.
+      */}
+      <HoloTwinHud
+        progress={0}
+        visible={downloading}
+        // The site label, as /lighting's loader shows it — not the venue.
+        unitName={SITE_LABEL}
+        percentOverride={percent}
+      />
 
-            {downloading ? (
-              /*
-                  THE BAR REPLACES THE BUTTON; the two are never on screen
-                  together. A disabled "Preparing…" button beside a bar says the
-                  same thing twice, and a control you can see but cannot press
-                  invites pressing it. While there is something to wait for the
-                  card is a progress card; when there is not, it is a button.
-                */
-              <div className="flex w-full flex-col gap-2">
-                {/*
-                    A track that is always the full width, with the fill inside
-                    it — not a bar that grows from nothing. An element with no
-                    width at 0% has no shape, so the card would visibly change
-                    height on the first byte.
-                  */}
-                <div
-                  className="h-1.5 w-full overflow-hidden rounded-full bg-white/10"
-                  role="progressbar"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  // Omitted while indeterminate, which is exactly what tells a
-                  // screen reader the length is unknown.
-                  aria-valuenow={indeterminate ? undefined : percent}
-                  aria-label="Loading venue"
-                >
-                  {/*
-                    A SWEEPING BLOCK when there is nothing to measure.
+      {!downloading && (
+        <Fragment>
+          <div className="fixed inset-0 z-[20000] bg-black/85 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-[20001] flex items-center justify-center p-6">
+            <div className="w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.14] bg-[#090b0f] shadow-2xl">
+              <div className="flex flex-col items-center gap-6 px-8 py-10 text-center">
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#0a84ff]/15 text-[#2997ff]">
+                  <HeadsetIcon />
+                </span>
 
-                    Two cases produce that, and the second is why this exists at
-                    all. A tunnel — ngrok, which is how a headset reaches a dev
-                    server over https — re-frames the response as
-                    `Transfer-Encoding: chunked`, and chunked responses carry no
-                    `Content-Length` by definition. So the exact setup used to
-                    test in a headset is the one where a percentage cannot be
-                    computed. The other is the Draco decode, which reports
-                    nothing at any time.
-
-                    A still bar and a finished bar look identical; movement is
-                    what says "still working".
-                  */}
-                  {indeterminate ? (
-                    <>
-                      <style>
-                        {
-                          "@keyframes vr-bar-sweep{0%{transform:translateX(-100%)}100%{transform:translateX(400%)}}"
-                        }
-                      </style>
-                      <div
-                        className="h-full w-1/4 rounded-full bg-cyan-400"
-                        style={{
-                          animation: "vr-bar-sweep 1.4s ease-in-out infinite",
-                        }}
-                      />
-                    </>
-                  ) : (
-                    <div
-                      className="h-full rounded-full bg-cyan-400 transition-[width] duration-200 ease-out"
-                      style={{ width: `${percent}%` }}
-                    />
-                  )}
+                <div className="flex flex-col items-center gap-2">
+                  <span className="font-[family-name:var(--font-saira)] text-[11px] font-semibold uppercase tracking-[0.2em] text-[#2997ff]">
+                    VR Experience
+                  </span>
+                  <h1 className="font-[family-name:var(--font-saira)] text-2xl font-semibold leading-tight text-white">
+                    {SITE_LABEL}
+                  </h1>
                 </div>
 
-                {/* The number goes away when it stops meaning anything — a
-                    figure frozen next to a bar that is still moving is worse
-                    than no figure. `tabular-nums` stops the digits shuffling
-                    the line as they tick over. */}
-                <p className="text-sm tabular-nums text-slate-400">
-                  {indeterminate ? "Preparing…" : `Loading ${percent}%`}
-                </p>
-              </div>
-            ) : support === "unsupported" ? (
-              /*
+                {support === "unsupported" ? (
+                  /*
                   ONLY THE BUTTON IS GATED ON WEBXR — everything above it is not,
                   and that is the fix for a page that looked broken.
 
@@ -211,35 +156,39 @@ export function EnterVROverlay({
                   this line takes the button's place rather than the card's
                   contents.
                 */
-              <div className="flex w-full flex-col gap-3">
-                <p className="text-sm leading-relaxed text-slate-400">
-                  Open this page in a VR headset to walk through {SITE_LABEL} in
-                  first person.
-                </p>
-                <Link
-                  href="/"
-                  className="text-sm font-medium text-cyan-300 underline-offset-4 hover:underline"
-                >
-                  Back to the flat experience
-                </Link>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={onEnter}
-                disabled={support === "checking"}
-                className="w-full rounded-xl bg-cyan-600 px-4 py-3 font-[family-name:var(--font-saira)] text-sm font-semibold text-white transition-colors hover:bg-cyan-500 disabled:opacity-50"
-              >
-                Enter VR
-              </button>
-            )}
+                  <div className="flex w-full flex-col gap-3">
+                    <p className="text-sm leading-relaxed text-white/80">
+                      Open this page in a VR headset to walk through{" "}
+                      {SITE_LABEL} in first person.
+                    </p>
+                    <Link
+                      href="/"
+                      className="text-sm font-medium text-[#2997ff] underline-offset-4 hover:underline"
+                    >
+                      Back to the flat experience
+                    </Link>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onEnter}
+                    disabled={support === "checking"}
+                    className="w-full rounded-xl bg-[#0071e3] px-4 py-3 font-[family-name:var(--font-saira)] text-sm font-semibold text-white transition-colors hover:bg-[#0a84ff] disabled:opacity-50"
+                  >
+                    Enter VR
+                  </button>
+                )}
 
-            {!!error && (
-              <p className="text-sm leading-relaxed text-red-400">{error}</p>
-            )}
+                {!!error && (
+                  <p className="text-sm leading-relaxed text-red-400">
+                    {error}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </Fragment>
+      )}
     </Fragment>
   );
 }

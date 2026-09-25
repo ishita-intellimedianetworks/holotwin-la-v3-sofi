@@ -18,6 +18,7 @@ import {
 } from "@/components/vr/data/venue-provider";
 import { VenueLoadProvider, useVenueLoad } from "./load-progress";
 import { EnterVROverlay } from "./enter-vr-overlay";
+import { VenueBlackout } from "./blackout";
 import { VREnvironment } from "./environment";
 import { Session } from "./session";
 import { VRStateProvider, useVRState } from "./state";
@@ -97,19 +98,16 @@ function VRGate({
   isInVrSession: boolean;
   error: string | null;
 }) {
-  // The venue is NAMED here, not chosen — see `enter-vr-overlay`.
-  const { venue } = useVenueContext();
   // The same numbers the in-world panel draws — one hook, one set of bytes,
   // two surfaces. See `./load-progress`.
-  const { percent, indeterminate, ready } = useVenueLoad();
+  const { percent, ready } = useVenueLoad();
 
   return (
     <EnterVROverlay
       onEnter={onEnter}
       isInVrSession={isInVrSession}
-      venueTitle={venue.title}
       error={error}
-      progress={{ percent, indeterminate, ready }}
+      progress={{ percent, ready }}
     />
   );
 }
@@ -330,6 +328,13 @@ function VRCanvas({
         </Suspense>
 
         <Visit debug={debug} />
+
+        {/* The black dip between venues. Outside `Visit`'s key, so it lives
+            through the swap it covers. Its own boundary: the loading line's
+            text suspends on the font. */}
+        <Suspense fallback={null}>
+          <VenueBlackout />
+        </Suspense>
       </XR>
     </Canvas>
   );

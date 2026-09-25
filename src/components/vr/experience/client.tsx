@@ -71,7 +71,7 @@ function VRBootScreen() {
             height: 28,
             borderRadius: "50%",
             border: "2px solid rgba(255,255,255,0.15)",
-            borderTopColor: "#22d3ee",
+            borderTopColor: "#2997ff",
             animation: "vr-boot-spin 0.8s linear infinite",
           }}
         />
@@ -160,7 +160,7 @@ class VRErrorBoundary extends Component<
               marginTop: 20,
               fontSize: 13,
               fontWeight: 500,
-              color: "#22d3ee",
+              color: "#2997ff",
             }}
           >
             Back to the flat experience

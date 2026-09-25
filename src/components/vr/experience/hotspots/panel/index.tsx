@@ -73,7 +73,7 @@ export function HotspotPanel({
   const subtitle = hotspot.option ?? hotspot.group;
 
   return (
-    <VRPanel width="46%" maxHeight="56%" onDismiss={onClose}>
+    <VRPanel onDismiss={onClose}>
       <PanelHeader
         title={hotspot.label}
         subtitle={subtitle}
