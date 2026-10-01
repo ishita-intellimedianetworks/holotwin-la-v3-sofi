@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Environment } from "@react-three/drei";
+import { Environment, useEnvironment } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useVRState } from "../state";
@@ -50,6 +50,19 @@ export function VREnvironment() {
       background={false}
     />
   );
+}
+
+/**
+ * Suspends until the HDR is loaded — the same cached load `VREnvironment`
+ * uses, so it is not fetched twice.
+ *
+ * FOR THE MODEL'S PRE-COMPILE. Setting `scene.environment` changes every
+ * standard material's program, so an HDR that lands after the venue compiled
+ * recompiles every shader mid-session — the hitch the pre-compile is there to
+ * prevent. Waiting on it first puts the IBL in place before anything compiles.
+ */
+export function useEnvironmentLoaded(): void {
+  useEnvironment({ files: ENV_FILE });
 }
 
 /** The first-person sky. Same blue the flat site fades to. */

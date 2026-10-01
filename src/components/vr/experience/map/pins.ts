@@ -62,6 +62,23 @@ export const flatDistance = (
 ): number => Math.hypot(ax - bx, az - bz);
 
 /**
+ * How far (x, z) is from a destination — to its NEAREST PIN, the figure the
+ * floor plan labels it with. Measuring the list and the place card to the
+ * viewpoint instead made them disagree with the map by hundreds of metres for
+ * a destination whose markers are spread out (the memorial's car parks).
+ */
+export const distanceToLayout = (
+  x: number,
+  z: number,
+  layout: Pick<VRLayout, "pins" | "position">,
+): number => {
+  const pins = layout.pins.length ? layout.pins : [layout.position];
+  let best = Infinity;
+  for (const [px, , pz] of pins) best = Math.min(best, flatDistance(x, z, px, pz));
+  return best;
+};
+
+/**
  * One dot per annotation point, numbered per destination.
  *
  * NUMBERED BY DESTINATION, NOT BY DOT, which is why `num` comes from the index

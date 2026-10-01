@@ -103,7 +103,11 @@ interface VRStateValue {
   barHidden: boolean;
   setBarHidden: (hidden: boolean) => void;
 
-  /** True when anything is covering the view. Input behind a panel is dropped. */
+  /**
+   * True when anything is covering the view. Pointer input behind a panel is
+   * dropped; the sticks are not — panels are head-locked, so walking with one
+   * open still shows where you are going.
+   */
   panelIsOpen: boolean;
 
   /** Bumped to re-run the venue's landing pose. */

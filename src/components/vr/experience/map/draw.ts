@@ -53,6 +53,17 @@ import { PLAN_MARGIN, PLAN_TEXELS } from "./plan-canvas";
  */
 const MARKER_SCALE = 1.25 * (PLAN_TEXELS / DEFAULT_MAP_SIZE);
 
+/**
+ * The PINS and their name pills, half as large again as the rest.
+ *
+ * At the flat map's proportion they were legible on a monitor and too small
+ * to read at arm's length in a headset — both the dots and the pills around
+ * each name. Only the pins grow: the player dot and view cone keep
+ * `MARKER_SCALE`, since they are not read, only located. The shared drawing
+ * code declutters overlapping pins, so bigger ones spread rather than pile up.
+ */
+const PIN_SCALE = MARKER_SCALE * 1.5;
+
 export interface ClickMarker {
   px: number;
   py: number;
@@ -151,7 +162,7 @@ export function drawPlan(args: DrawPlanArgs): ImageRect {
       bounds,
       lb.dw,
       lb.dh,
-      MARKER_SCALE,
+      PIN_SCALE,
       selectedId,
       numbered,
       zoom,

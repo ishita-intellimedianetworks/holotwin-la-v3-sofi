@@ -61,7 +61,15 @@ export interface PlanCanvas {
  * it; instead the same canvas is redrawn and `needsUpdate` re-uploads it. The
  * image is the only thing that changes when the venue does.
  */
-export function usePlanCanvas(imageUrl: string | undefined): PlanCanvas | null {
+export function usePlanCanvas(
+  imageUrl: string | undefined,
+  /**
+   * Set when the PNG arrives. The panel only redraws when something is dirty
+   * or the head moves, so without this a viewer holding still kept a plate
+   * with pins and no plan until they looked away.
+   */
+  dirty?: { current: boolean },
+): PlanCanvas | null {
   const imageRef = useRef<HTMLImageElement | null>(null);
 
   /**
@@ -108,11 +116,9 @@ export function usePlanCanvas(imageUrl: string | undefined): PlanCanvas | null {
   }, [plan]);
 
   /**
-   * Load the plan PNG.
-   *
-   * Same-origin `/floorplan/*.png`, so no `crossOrigin` and no CORS taint. A
-   * failed load leaves `imageRef` null and the panel draws its empty state
-   * rather than throwing — a missing PNG should cost the map, not the session.
+   * Load the plan PNG — from the preload cache, so the map is normally drawn
+   * complete on the frame it opens instead of pins-first with the plan landing
+   * a second later. See `preloadPlanImage`.
    */
   useEffect(() => {
     if (!plan || !imageUrl) {
@@ -121,21 +127,52 @@ export function usePlanCanvas(imageUrl: string | undefined): PlanCanvas | null {
     }
 
     let cancelled = false;
-    const img = new Image();
-
-    img.onload = () => {
-      if (!cancelled) imageRef.current = img;
-    };
-    img.onerror = () => {
-      console.error(`[VR] floor plan failed to load: ${imageUrl}`);
-    };
-    img.src = imageUrl;
+    void preloadPlanImage(imageUrl).then((img) => {
+      if (cancelled || !img) return;
+      imageRef.current = img;
+      if (dirty) dirty.current = true;
+    });
 
     return () => {
       cancelled = true;
       imageRef.current = null;
     };
-  }, [plan, imageUrl]);
+  }, [plan, imageUrl, dirty]);
 
   return plan;
+}
+
+/** Decoded plan images by url, for the life of the page. Three small PNGs. */
+const planImages = new Map<string, Promise<HTMLImageElement | null>>();
+
+/**
+ * Fetch AND DECODE a floor plan ahead of the map opening.
+ *
+ * Called when a venue loads, so by the time anyone presses the map button the
+ * PNG is already a bitmap. Loading it on open was what made the plan arrive
+ * late or not at all on a headset: a 0.5–0.9 MB PNG decoded lazily on the
+ * first `drawImage`, on the main thread, inside a frame.
+ *
+ * Same-origin `/floorplan/*.png`, so no `crossOrigin` and no CORS taint. A
+ * failed load resolves to null and the panel draws its empty state rather
+ * than throwing — a missing PNG should cost the map, not the session.
+ */
+export function preloadPlanImage(url: string): Promise<HTMLImageElement | null> {
+  const cached = planImages.get(url);
+  if (cached) return cached;
+
+  const img = new Image();
+  img.decoding = "async";
+  img.src = url;
+  const loaded = img
+    .decode()
+    .then(() => img)
+    .catch(() => {
+      console.error(`[VR] floor plan failed to load: ${url}`);
+      // Not cached as a failure: the next open tries again.
+      planImages.delete(url);
+      return null;
+    });
+  planImages.set(url, loaded);
+  return loaded;
 }

@@ -6,6 +6,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { VRHotspot } from "@/components/vr/data";
 import { COLOR } from "../../ui/tokens";
+import { pressWasSpentOnDock } from "../../bar-toggle";
 
 /**
  * A hotspot marker: two rings around a dot, with a label that fades in when the
@@ -119,7 +120,8 @@ export function HotspotMarker({
       // covering the thing that is meant to dismiss it.
       onPointerDown={(event) => {
         event.stopPropagation();
-        onOpen();
+        // The pinch that just brought the dock back is not also a press here.
+        if (!pressWasSpentOnDock()) onOpen();
       }}
     >
       <group
@@ -183,7 +185,10 @@ export function HotspotMarker({
 
       {/* Billboarded, so the name faces the reader wherever they stand. */}
       <Billboard position={[0, LABEL.y, 0]}>
-        <group ref={labelRef}>
+        {/* Never a press target. It is faded out rather than removed, and the
+            ray does not skip invisible objects — so without this a press aimed
+            just above a marker, or at something behind it, opened the panel. */}
+        <group ref={labelRef} pointerEvents="none">
           <mesh ref={tooltipRef} position={[0, 0, -0.001]}>
             <planeGeometry args={[plate[0], plate[1]]} />
             <meshBasicMaterial

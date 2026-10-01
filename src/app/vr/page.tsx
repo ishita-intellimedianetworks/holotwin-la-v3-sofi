@@ -4,9 +4,9 @@ import VRClient from "@/components/vr/experience/client";
  * `/vr` — the immersive walkthrough of the whole site.
  *
  * A Server Component, so the `ssr: false` import stays in
- * `components/vr/experience/client.tsx`. It takes no parameters: the gate lists
- * every venue and the session can move between them without leaving VR, so this
- * route IS the site rather than a page per building. `/vr/<venue>` exists
+ * `components/vr/experience/client.tsx`. It takes no parameters: the gate opens
+ * on the default venue and the dock's venue button moves between them without
+ * leaving VR, so this route IS the site rather than a page per building. `/vr/<venue>` exists
  * alongside it for a direct link into one.
  */
 export default function VRPage() {

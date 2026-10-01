@@ -165,11 +165,11 @@ export function SeatMapPanel({
                   wordBreak="keep-all"
                 >
                   {/*
-                    THE LIST POSITION WHERE THERE IS NO SECTION NUMBER. Only the
-                    stadium authors `section`; the memorial's three seat views
-                    carry none, and a dot reading "*" looks like data that failed
-                    to load rather than a seat. Numbering by list order keeps the
-                    plot and the rows underneath referring to each other.
+                    THE LIST POSITION WHERE THERE IS NO SECTION NUMBER. No seat
+                    view in `scenes.json` authors `section` yet, and a dot
+                    reading "*" looks like data that failed to load rather than
+                    a seat. The rows underneath carry the same number in their
+                    tile, which is what lets a dot be matched to its row.
                   */}
                   {String(row.section ?? order.get(row.id) ?? "")}
                 </VRText>
@@ -197,6 +197,18 @@ export function SeatMapPanel({
               key={seat.id}
               label={seat.title}
               detail={seat.option}
+              // The dot's number, so the plot and the list point at each other.
+              icon={
+                <VRText
+                  fontSize={TEXT.label}
+                  color={COLOR.text}
+                  fontWeight="semi-bold"
+                  pointerEvents="none"
+                  wordBreak="keep-all"
+                >
+                  {String(seat.section ?? order.get(seat.id) ?? "")}
+                </VRText>
+              }
               onSelect={() => onSelect(seat)}
             />
           ))

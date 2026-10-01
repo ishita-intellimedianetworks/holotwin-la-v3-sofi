@@ -168,22 +168,10 @@
     },
 
     "memorial": {
-      "//instancing": [
-        "OFF for this venue by request.",
-        "",
-        "It is the ONE venue the pass does anything for: it loads the flat",
-        "site's own memorial-v4.glb, which draws 1,037 distinct shapes across",
-        "2,471 nodes, and collapsing the repeats removes 1,370 of those draw",
-        "calls. Off, the venue submits all 2,471 — 4,942 per frame in stereo,",
-        "against a ceiling of 300. Its triangles were never the problem; the",
-        "submits are.",
-        "",
-        "The other two are unaffected either way: their models were merged by",
-        "material by `npm run vr:optimize`, so they have zero groups of",
-        "four-or-more identical draws for the pass to find."
-      ],
+      "//instancing": "OFF: the VR model below is already merged by material, so there are no repeats left for the pass to find.",
       "instancing": false,
-      "//model": "DELIBERATELY ABSENT. VR loads the same memorial-v4.glb the flat site does. The rebuilt copy was structurally lossless — identical triangles, material for material — but it is not what is wanted here, so this venue opts out and takes the 2,471 draw calls that come with it. There is no recipe for it in vr-model-optimize.mjs either, so `npm run vr:optimize` cannot quietly put one back.",
+      "//model": "VR-ONLY BUILD from the ORIGINAL export (memorial-v4.original.glb.bak) by `npm run vr:optimize memorial`. memorial-v4.glb, which the flat site loads, was simplified during compression and lost or reshaped 107 meshes — the missing walls and ground. This build moves no vertex: no simplification, only merging by material, so every mesh is back and the draw calls fall from 2,471 to the material count.",
+      "model": "/models/memorial/memorial-vr.3542185d.glb",
       "far": 1300,
       "cameraHeight": 1.5,
       "//firstPerson": "y is the authored concourse height. The navmesh spans 33 m of tiers, so its lowest point is NOT this floor — see the note in experience/session.",

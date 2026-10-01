@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Container } from "@react-three/uikit";
+import { HoverLabel } from "../hover-label";
 import { COLOR, RADIUS } from "../tokens";
 
 /**
@@ -19,9 +20,15 @@ export function IconButton({
   tone = "default",
   active = false,
   disabled = false,
+  label,
   onSelect,
 }: {
   icon: ReactNode;
+  /**
+   * Shown above the disc while the ray is on it — the flat dock's tooltip.
+   * A glyph alone is a guess the first time; the name removes it.
+   */
+  label?: string;
   /** `danger` for the one button that ends the session. */
   tone?: "default" | "danger";
   /** Marks the view you are already in. */
@@ -35,6 +42,7 @@ export function IconButton({
   onSelect: () => void;
 }) {
   const danger = tone === "danger";
+  const [hovered, setHovered] = useState(false);
 
   return (
     <Container
@@ -77,7 +85,9 @@ export function IconButton({
       // `onPointerDown`, never `onClick`: a click needs press and release on
       // the same object, and a hand-held ray drifts between the two.
       onPointerDown={disabled ? undefined : onSelect}
+      onHoverChange={label ? setHovered : undefined}
     >
+      {!!label && hovered && <HoverLabel label={label} targetSize={SIZE} />}
       {/*
         The glyph is wrapped rather than trusted to behave.
 

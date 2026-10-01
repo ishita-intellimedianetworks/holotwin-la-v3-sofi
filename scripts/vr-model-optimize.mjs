@@ -91,19 +91,34 @@ const RECIPES = {
     dropNormals: true,
     quantizePosition: 24,
   },
-  /**
-   * NO MEMORIAL RECIPE, and its absence is deliberate rather than an oversight.
-   *
-   * It had one, and it worked: 2,471 draw calls merged to 201 with an identical
-   * triangle count, material for material. VR nonetheless loads the same
-   * `memorial-v4.glb` the flat site draws, because that is what was asked for —
-   * so this venue keeps the original and the draw calls that come with it.
-   *
-   * The entry stays out rather than being commented back in with `simplifyRatio:
-   * 1`, because a recipe of any kind writes a `model` override into
-   * `vr-scenes.json`, and the point is that running this script cannot quietly
-   * put the venue back on a rebuilt file.
-   */
+  memorial: {
+    /**
+     * FROM THE ORIGINAL, NOT FROM memorial-v4.glb.
+     *
+     * v4 is not a lossless compression of the original: it was simplified on
+     * the way, 1,248k triangles to 643k, and the simplifier reshaped 103 meshes
+     * — the big shell and ground meshes by tens of metres (Box012_1 by 51 m,
+     * Box012_5 by 62 m) — and dropped four outright. Those are the walls and
+     * ground that show as holes. Rebuilding v4 only preserved the damage.
+     *
+     * So this reads the untouched export and does NOTHING that moves a vertex:
+     * no simplification, normals kept (the VR scene has an environment map, so
+     * they are visible). Only the structural passes run — merging meshes that
+     * share a material — which is what takes 2,471 draw calls down to about
+     * the material count. The flat site keeps memorial-v4.glb.
+     */
+    in: "public/models/memorial/memorial-v4.original.glb.bak",
+    out: "public/models/memorial/memorial-vr.glb",
+    simplifyRatio: 1,
+    dropNormals: false,
+    /**
+     * 20 bits, not the 24 the others use: the size is dominated by normals and
+     * UVs, not positions, so 24 bought nothing but a megabyte. 20 bits over
+     * the ~800 m venue is a ~1 mm grid, finer than the 16-bit per-object grid
+     * the export shipped with at its worst.
+     */
+    quantizePosition: 20,
+  },
   stadium: {
     in: "public/models/stadium/sofi-stadium-v5-web.glb",
     out: "public/models/stadium/sofi-stadium-v5-web-vr.glb",
@@ -179,7 +194,9 @@ async function optimize(name, recipe, io) {
   const input = path.resolve(ROOT, recipe.in);
 
   const before = fs.statSync(input).size;
-  const document = await io.read(input);
+  // Bytes, not `io.read`: that picks the format from the extension, and a
+  // source kept as `.glb.bak` so nothing serves it would be read as JSON.
+  const document = await io.readBinary(fs.readFileSync(input));
   const was = census(document);
 
   await document.transform(

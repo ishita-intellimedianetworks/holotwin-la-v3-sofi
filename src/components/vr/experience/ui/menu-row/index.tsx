@@ -51,6 +51,51 @@ const TILE_GLYPH = 26;
 /** `size={15}` — the disclosure chevron. */
 const CHEVRON = 24;
 
+/**
+ * Press-then-release-in-place handlers, for anything that sits inside a
+ * scrolling container — see the note at the top of this file. `MenuRow` uses
+ * it; so does every other row or chip that lives in a list a person drags.
+ * Pass `undefined` for an inert target.
+ */
+/** The two fields of a uikit pointer event this needs. */
+type RayPress = { pointerId?: number | null; point: THREE.Vector3 };
+
+export function useReleaseSelect(onSelect: (() => void) | undefined) {
+  /**
+   * Where this target was pressed, keyed by pointer.
+   *
+   * A map rather than one slot because a headset has two hands, and a press
+   * from the left controller must not be closed out by the right one lifting.
+   */
+  const pressed = useRef(new Map<number, THREE.Vector3>());
+  if (!onSelect) return {};
+
+  const forget = (event: RayPress) => {
+    if (event.pointerId != null) pressed.current.delete(event.pointerId);
+  };
+
+  return {
+    onPointerDown: (event: RayPress) => {
+      if (event.pointerId == null) return;
+      pressed.current.set(event.pointerId, event.point.clone());
+    },
+    // Not `onPointerUp` alone: a release outside the target it started on is
+    // a miss, and the same drag that scrolls the list ends somewhere else.
+    //
+    // Rarely fires once uikit's scroll handler has captured the pointer — a
+    // captured pointer reports the captured object as its intersection, so it
+    // cannot leave. It is here for the press that never reached that handler.
+    onPointerLeave: forget,
+    onPointerCancel: forget,
+    onPointerUp: (event: RayPress) => {
+      if (event.pointerId == null) return;
+      const from = pressed.current.get(event.pointerId);
+      pressed.current.delete(event.pointerId);
+      if (from && from.distanceTo(event.point) <= DRAG_SLOP) onSelect();
+    },
+  };
+}
+
 export function MenuRow({
   label,
   detail,
@@ -82,13 +127,7 @@ export function MenuRow({
   chevron?: boolean;
   onSelect: () => void;
 }) {
-  /**
-   * Where this row was pressed, keyed by pointer.
-   *
-   * A map rather than one slot because a headset has two hands, and a press
-   * from the left controller must not be closed out by the right one lifting.
-   */
-  const pressed = useRef(new Map<number, THREE.Vector3>());
+  const selectOnRelease = useReleaseSelect(onSelect);
 
   return (
     <Container
@@ -105,28 +144,7 @@ export function MenuRow({
       backgroundColor={active ? COLOR.here : COLOR.rowRest}
       cursor="pointer"
       hover={{ backgroundColor: active ? COLOR.here : COLOR.tile }}
-      onPointerDown={(event) => {
-        if (event.pointerId == null) return;
-        pressed.current.set(event.pointerId, event.point.clone());
-      }}
-      // Not `onPointerUp` alone: a release outside the row it started in is a
-      // miss, and the same drag that scrolls the list ends on a different row.
-      //
-      // Rarely fires once uikit's scroll handler has captured the pointer — a
-      // captured pointer reports the captured object as its intersection, so it
-      // cannot leave. It is here for the press that never reached that handler.
-      onPointerLeave={(event) => {
-        if (event.pointerId != null) pressed.current.delete(event.pointerId);
-      }}
-      onPointerCancel={(event) => {
-        if (event.pointerId != null) pressed.current.delete(event.pointerId);
-      }}
-      onPointerUp={(event) => {
-        if (event.pointerId == null) return;
-        const from = pressed.current.get(event.pointerId);
-        pressed.current.delete(event.pointerId);
-        if (from && from.distanceTo(event.point) <= DRAG_SLOP) onSelect();
-      }}
+      {...selectOnRelease}
     >
       {!!icon && (
         <Container

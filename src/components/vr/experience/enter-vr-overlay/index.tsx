@@ -109,13 +109,24 @@ export function EnterVROverlay({
         download is done, so there is never an Enter VR to press into a venue
         that is still coming down the wire.
       */}
-      <HoloTwinHud
-        progress={0}
-        visible={downloading}
-        // The site label, as /lighting's loader shows it — not the venue.
-        unitName={SITE_LABEL}
-        percentOverride={percent}
-      />
+      {/*
+        ONE COLOUR on this route. The shared HUD fills with a cyan-to-mint
+        gradient; the override is scoped to this wrapper so the flat site's
+        loader is untouched. `display: contents` keeps the wrapper out of
+        layout — the HUD positions itself.
+      */}
+      <div className="vr-gate-hud" style={{ display: "contents" }}>
+        <style>
+          {".vr-gate-hud .htl-progress-fill{background:#0fb7ff}"}
+        </style>
+        <HoloTwinHud
+          progress={0}
+          visible={downloading}
+          // The site label, as /lighting's loader shows it — not the venue.
+          unitName={SITE_LABEL}
+          percentOverride={percent}
+        />
+      </div>
 
       {!downloading && (
         <Fragment>

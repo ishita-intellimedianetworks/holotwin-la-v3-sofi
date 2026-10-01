@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Container } from "@react-three/uikit";
 import { ArrowLeftIcon, XIcon } from "@react-three/uikit-lucide";
 import { COLOR, POINTER_ORDER, RADIUS, SPACE, TEXT } from "../tokens";
 import { VRText } from "../text";
+import { HoverLabel } from "../hover-label";
 
 /**
  * Shared panel furniture, so every panel's title and close control sit in the
@@ -22,9 +24,10 @@ export function PanelTitle({ children }: { children: string }) {
 }
 
 /**
- * The close control: the flat panel's 30 px disc — `rgba(255,255,255,0.14)`
- * with an `#E6EAEF` X — scaled for the headset. A disc because a circular
- * target has no dead corners for a ray to land in.
+ * The close control: a SOLID RED disc with a white X, as the reference build's
+ * `RedClose` draws it — fully opaque, so it reads as "close" at a glance
+ * against any panel. A disc because a circular target has no dead corners for
+ * a ray to land in.
  */
 const CLOSE_TARGET = 52;
 const CLOSE_GLYPH = 24;
@@ -33,6 +36,7 @@ const CLOSE_GLYPH = 24;
 const PRIMARY_HEIGHT = 72;
 
 export function CloseButton({ onClose }: { onClose: () => void }) {
+  const [hovered, setHovered] = useState(false);
   return (
     <Container
       width={CLOSE_TARGET}
@@ -47,13 +51,16 @@ export function CloseButton({ onClose }: { onClose: () => void }) {
        */
       pointerEventsOrder={POINTER_ORDER.overlay}
       borderRadius={RADIUS.dot}
-      backgroundColor={COLOR.closeFill}
+      backgroundColor={COLOR.danger}
+      opacity={1}
       alignItems="center"
       justifyContent="center"
       cursor="pointer"
-      hover={{ backgroundColor: COLOR.closeHover }}
+      hover={{ backgroundColor: COLOR.dangerHover }}
       onPointerDown={onClose}
+      onHoverChange={setHovered}
     >
+      {hovered && <HoverLabel label="Close" targetSize={CLOSE_TARGET} />}
       {/*
         pointerEvents="none" is load-bearing, not decoration. The glyph sits
         dead centre of the disc — exactly where the ray is aimed — and as a
@@ -64,7 +71,7 @@ export function CloseButton({ onClose }: { onClose: () => void }) {
       <XIcon
         width={CLOSE_GLYPH}
         height={CLOSE_GLYPH}
-        color="#e6eaef"
+        color="#ffffff"
         pointerEvents="none"
       />
     </Container>
@@ -77,6 +84,7 @@ export function CloseButton({ onClose }: { onClose: () => void }) {
  * never be pressed by accident for each other.
  */
 function BackButton({ onBack }: { onBack: () => void }) {
+  const [hovered, setHovered] = useState(false);
   return (
     <Container
       width={CLOSE_TARGET}
@@ -92,7 +100,9 @@ function BackButton({ onBack }: { onBack: () => void }) {
       cursor="pointer"
       hover={{ backgroundColor: COLOR.tile }}
       onPointerDown={onBack}
+      onHoverChange={setHovered}
     >
+      {hovered && <HoverLabel label="Back" targetSize={CLOSE_TARGET} />}
       {/* Same reason as the close glyph: a child would otherwise swallow the
           press aimed at the middle of the disc. */}
       <ArrowLeftIcon

@@ -1,3 +1,5 @@
+import { CROWD_WORD } from "@/components-v5/shared/crowd-display";
+
 /**
  * How a menu list is broken up.
  *
@@ -52,15 +54,10 @@ export function groupByCategoryAndOption<
 /**
  * The crowd level as a word, for a row's trailing slot.
  *
- * `scenes.json` stores "high" / "med" / "low", which describe the CROWD. A row
- * reading "High" next to a gate name is ambiguous — high what? — so each maps to
- * how the place will feel to walk into, which is what the reader wants and what
- * the flat site's own copy says ("Heavy flow - expect queues").
+ * The SHARED word (`CROWD_WORD`: Heavy / Moderate / Clear), the same one the
+ * place card and the crowd board print. This used to say Busy / Steady / Clear,
+ * so one gate read "Busy" in the list and "Heavy" a press later.
  */
 export function crowdLabel(crowd: string | undefined): string | undefined {
-  if (!crowd) return undefined;
-  if (crowd === "high") return "Busy";
-  if (crowd === "med") return "Steady";
-  if (crowd === "low") return "Clear";
-  return undefined;
+  return crowd ? CROWD_WORD[crowd] : undefined;
 }

@@ -10,7 +10,6 @@ import {
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import type * as THREE from "three";
-import { useGLTF } from "@react-three/drei";
 import { XR, XROrigin } from "@react-three/xr";
 import {
   VRVenueProvider,
@@ -23,6 +22,11 @@ import { VREnvironment } from "./environment";
 import { Session } from "./session";
 import { VRStateProvider, useVRState } from "./state";
 import { store } from "./xr-store";
+import { preloadPlanImage } from "./map/plan-canvas";
+import { releaseVenueGLTF } from "@/components/vr/model";
+import { useVenueGLTF } from "@/components/vr/model/loader";
+import { setAssetCacheEnabled } from "@/components/vr/hooks/use-asset-progress";
+import { releaseNavmeshCollider } from "@/components/vr/hooks/use-navmesh-collider";
 // Side effect: warms uikit's font chunk so the first panel does not pop.
 import "./ui/preload-font";
 
@@ -57,8 +61,40 @@ function Player() {
  */
 function ModelReadyProbe({ path }: { path: string }) {
   const { markModelReady } = useVenueLoad();
-  useGLTF(path);
+  useVenueGLTF(path);
   useEffect(markModelReady, [markModelReady]);
+  return null;
+}
+
+/**
+ * How long after leaving a venue its model is freed, in milliseconds. Long
+ * enough that the old scene has certainly been unmounted — the swap happens
+ * under the blackout — so nothing draws a disposed mesh and re-uploads it.
+ */
+const RELEASE_DELAY_MS = 2000;
+
+/** The venue on screen now, read by a release that fires after the swap. */
+let activeVenueModel: string | null = null;
+
+/**
+ * Frees the venue the player just left — see `releaseVenueGLTF`. Outside
+ * `Visit`'s key, so it sees every change of venue from one place.
+ *
+ * Skipped if the player has come straight back: the delay means the old venue
+ * can be the current one again by the time this runs.
+ */
+function VenueRelease({ model, navmesh }: { model: string; navmesh: string }) {
+  useEffect(() => {
+    activeVenueModel = model;
+    return () => {
+      window.setTimeout(() => {
+        if (activeVenueModel === model) return;
+        releaseVenueGLTF(model);
+        releaseVenueGLTF(navmesh);
+        releaseNavmeshCollider(navmesh);
+      }, RELEASE_DELAY_MS);
+    };
+  }, [model, navmesh]);
   return null;
 }
 
@@ -256,6 +292,12 @@ function VRCanvas({
 }) {
   const { venue } = useVenueContext();
 
+  // The floor plan decodes while the venue loads, so the map opens complete
+  // rather than drawing its pins first and the plan a second later.
+  useEffect(() => {
+    if (venue.floorPlan) void preloadPlanImage(venue.floorPlan);
+  }, [venue.floorPlan]);
+
   return (
     <Canvas
       gl={{ localClippingEnabled: true }}
@@ -326,6 +368,7 @@ function VRCanvas({
         <Suspense fallback={null}>
           <ModelReadyProbe key={venue.model} path={venue.model} />
         </Suspense>
+        <VenueRelease model={venue.model} navmesh={venue.navmesh} />
 
         <Visit debug={debug} />
 
@@ -350,6 +393,12 @@ export default function VRExperience({ venueId }: { venueId?: string }) {
    * once and would otherwise close over the first value forever.
    */
   const contextLostRef = useRef(false);
+
+  // three's file cache is on for this route only — see `use-asset-progress`.
+  useEffect(() => {
+    setAssetCacheEnabled(true);
+    return () => setAssetCacheEnabled(false);
+  }, []);
 
   /**
    * Folded into the gate's error slot rather than given a screen of its own.
@@ -402,13 +451,16 @@ export default function VRExperience({ venueId }: { venueId?: string }) {
     setEnterError(null);
     store
       .enterVR()
-      .then(() => {
+      .then((session) => {
         setIsInVrSession(true);
-        store.subscribe((state) => {
-          if (state.session) {
-            state.session.addEventListener("end", handleVRExit);
-          }
-        });
+        /**
+         * On the session the promise hands back, not from a store subscription.
+         * The store writes `session` during `sessionstart`, BEFORE this promise
+         * resolves, so a subscriber added here only ever heard about it if some
+         * later, unrelated store change happened to fire — and when none did,
+         * leaving VR skipped the reload and left a black page behind.
+         */
+        session?.addEventListener("end", handleVRExit, { once: true });
       })
       .catch((err: unknown) => {
         setIsInVrSession(false);

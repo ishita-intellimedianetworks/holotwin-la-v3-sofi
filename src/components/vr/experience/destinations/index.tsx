@@ -20,7 +20,7 @@ import { COLOR, SPACE, TEXT } from "../ui/tokens";
 import { CATEGORY_ICON } from "../ui/category-icons";
 import { crowdLabel } from "../menus/grouping";
 import { useVRState } from "../state";
-import { distanceLabel, etaLabel, flatDistance } from "../map/pins";
+import { distanceLabel, etaLabel, distanceToLayout } from "../map/pins";
 import { CrowdPanel } from "./crowd-panel";
 import { NoticesPanel } from "./notices-panel";
 import { PlaceDetail } from "./place-detail";
@@ -247,12 +247,7 @@ export function DestinationsPanel({ onClose }: { onClose: () => void }) {
   const openPlace = useCallback(
     (place: VRLayout, backTo: View = { kind: "list" }) => {
       camera.getWorldPosition(_head);
-      const units = flatDistance(
-        _head.x,
-        _head.z,
-        place.position[0],
-        place.position[2],
-      );
+      const units = distanceToLayout(_head.x, _head.z, place);
       setNow(Date.now());
       setView({
         kind: "place",
@@ -363,12 +358,7 @@ export function DestinationsPanel({ onClose }: { onClose: () => void }) {
         )
           .map((item) => ({
             item,
-            units: flatDistance(
-              view.from.x,
-              view.from.z,
-              item.position[0],
-              item.position[2],
-            ),
+            units: distanceToLayout(view.from.x, view.from.z, item),
           }))
           .sort((x, y) => x.units - y.units);
 

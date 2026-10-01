@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import {
@@ -85,7 +85,18 @@ export function NavmeshClamp({ navmesh }: { navmesh: THREE.Mesh | null }) {
   /** How long the head has been continuously off the mesh. */
   const offFor = useRef(0);
 
-  const { originRef, isTravelling } = useVRState();
+  const { originRef, isTravelling, landToken } = useVRState();
+
+  /**
+   * A LANDING DROPS THE ANCHOR TOO, for the same reason a glide does. Home and
+   * entering first person re-place the player without travelling, and a kept
+   * anchor from before would pull them straight back to where Home was pressed
+   * the first time the head strayed off the mesh.
+   */
+  useEffect(() => {
+    anchor.current = null;
+    offFor.current = 0;
+  }, [landToken]);
 
   useFrame((state, delta) => {
     const origin = originRef.current;

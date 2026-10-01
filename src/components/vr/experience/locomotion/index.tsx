@@ -5,10 +5,12 @@ import { useFrame } from "@react-three/fiber";
 import { useXRInputSourceState } from "@react-three/xr";
 import * as THREE from "three";
 import {
+  LEVEL_HEIGHT,
   floorAt,
   nearestCentroid,
   stepFloor,
 } from "@/components/vr/hooks/use-navmesh-collider";
+import { useVRState } from "../state";
 
 /**
  * Thumbstick locomotion with navmesh occlusion. Left stick walks, right stick
@@ -93,6 +95,16 @@ const MIN_HEAD_HEIGHT = 0.6;
 /** Used when a venue authored no eye height and the runtime supplies none. */
 const FALLBACK_EYE_HEIGHT = 1.6;
 
+/**
+ * Beyond this, the head's offset from the origin is not trusted at a landing,
+ * in metres. Wider than any guardian a person walks around in; far narrower
+ * than the distance to a camera that has not become the headset yet.
+ */
+const MAX_HEAD_OFFSET = 5;
+
+/** Storeys searched below a seat for somewhere to stand, before giving up. */
+const SEAT_SEARCH_BANDS = 8;
+
 const UP = new THREE.Vector3(0, 1, 0);
 
 // Module scope: a useFrame body must not allocate.
@@ -145,6 +157,15 @@ export function NavmeshLocomotion({
   const left = useXRInputSourceState("controller", "left");
   const right = useXRInputSourceState("controller", "right");
   const placed = useRef(false);
+  const { teleportTo, moveToLocation } = useVRState();
+  /** Whether the trip in flight lands on an authored seat pose. */
+  const landingExact = useRef(false);
+  /**
+   * True after landing on a seat view — eyes at an authored height with no
+   * floor within a storey below. Walking is held until the stick asks, and
+   * then it starts from the nearest real floor. See the landing branch.
+   */
+  const seated = useRef(false);
 
   /**
    * The navmesh height of the storey the player is ON — the surface, before
@@ -184,8 +205,35 @@ export function NavmeshLocomotion({
     if (!placed.current && navmesh) {
       placed.current = true;
 
+      /**
+       * THE HEAD LANDS ON THE SPAWN, not the origin — the same solve the
+       * teleport uses. Under room-scale the origin is the guardian's centre, so
+       * placing it on the spawn put the player a metre or more away, which at a
+       * gate is off the navmesh and got them clamped back towards wherever Home
+       * was pressed.
+       *
+       * The offset is ignored when it is implausibly large: before the first
+       * XR frame the camera is not yet the headset, and its position says
+       * nothing about where the wearer stands.
+       */
+      const targetYaw = THREE.MathUtils.degToRad(spawn.rotationY);
+      const deltaYaw = targetYaw - origin.rotation.y;
+      state.camera.getWorldPosition(_head);
+      let offX = _head.x - origin.position.x;
+      let offZ = _head.z - origin.position.z;
+      if (Math.hypot(offX, offZ) >= MAX_HEAD_OFFSET) {
+        offX = 0;
+        offZ = 0;
+      }
+      const cos = Math.cos(deltaYaw);
+      const sin = Math.sin(deltaYaw);
+      const rotX = offX * cos + offZ * sin;
+      const rotZ = -offX * sin + offZ * cos;
+
+      // Solved for the head first; the origin is set from it below.
       origin.position.set(...spawn.position);
-      origin.rotation.y = THREE.MathUtils.degToRad(spawn.rotationY);
+      origin.rotation.y = targetYaw;
+      seated.current = false;
 
       const p = origin.position;
 
@@ -211,11 +259,14 @@ export function NavmeshLocomotion({
 
       groundY.current = ground ?? p.y - groundOffset;
       p.y = groundY.current + groundOffset + (standingLiftRef?.current ?? 0);
+      p.x -= rotX;
+      p.z -= rotZ;
     }
 
     // The teleport owns the origin until it lands.
     if (isTravelling?.()) {
       travelling.current = true;
+      landingExact.current = !!moveToLocation?.exactPose;
       return;
     }
 
@@ -233,7 +284,89 @@ export function NavmeshLocomotion({
       if (navmesh) {
         const p = origin.position;
         const hint = p.y - groundOffset - (standingLiftRef?.current ?? 0);
-        groundY.current = floorAt(navmesh, p.x, p.z, hint) ?? hint;
+        /**
+         * BOUNDED, so a seat view is recognised as one. Those land at their
+         * authored eye height above the navmesh (`exactPose`), and the
+         * unbounded read handed back whatever surface lay in that column —
+         * often the pitch — which the first stick push then walked against and
+         * the floor-follow eased the player tens of metres down onto.
+         */
+        // At the HEAD, which the teleport landed on the target; the origin
+        // can be a metre off it under room-scale, and off the mesh.
+        state.camera.getWorldPosition(_head);
+        const near = stepFloor(
+          navmesh,
+          _head.x,
+          _head.z,
+          hint,
+          LEVEL_HEIGHT,
+          LEVEL_HEIGHT,
+        );
+        /**
+         * A seat view is seated WHATEVER is below it. Inferring it from a
+         * missing floor alone missed every seat with a surface within a storey
+         * — front rows over the pitch, a section over a concourse — and the
+         * floor-follow then sank the view off its authored height untouched.
+         */
+        seated.current = landingExact.current || near == null;
+        landingExact.current = false;
+        groundY.current = near ?? hint;
+      }
+    }
+
+    /**
+     * SEATED: the view stays where it was put until the stick asks to walk,
+     * and then the player is blinked to the nearest floor on the seat's own
+     * storey — a real place to walk from — rather than dropped or stranded.
+     */
+    if (seated.current) {
+      const move = left?.gamepad?.["xr-standard-thumbstick"];
+      if (
+        navmesh &&
+        Math.hypot(move?.xAxis ?? 0, move?.yAxis ?? 0) > DEADZONE
+      ) {
+        state.camera.getWorldPosition(_head);
+        /**
+         * The seat's own storey first, then a storey further down at a time.
+         * An unfiltered "nearest in plan" is what `nearestCentroid` falls back
+         * to when a band is empty, and under an upper bowl that is the pitch.
+         */
+        let target: THREE.Vector3 | null = null;
+        for (let band = 1; band <= SEAT_SEARCH_BANDS && !target; band++) {
+          const y = groundY.current - (band - 1) * LEVEL_HEIGHT;
+          const found = nearestCentroid(centroids, _head.x, _head.z, y);
+          if (found && Math.abs(found.y - y) <= LEVEL_HEIGHT) target = found;
+        }
+        target ??= nearestCentroid(centroids, _head.x, _head.z, groundY.current);
+        if (target) {
+          seated.current = false;
+          teleportTo({
+            position: [target.x, target.y, target.z],
+            rotationY: THREE.MathUtils.radToDeg(origin.rotation.y),
+          });
+          return;
+        }
+      }
+    } else if (navmesh) {
+      /**
+       * FOLLOW THE FLOOR, every frame and not only while the stick is held.
+       * The standing lift is re-measured every frame above; applied only on a
+       * step, a runtime with no floor estimate left the eyes on the floor
+       * until the stick was first touched.
+       *
+       * Eased rather than snapped so a kerb reads as a step rather than a
+       * jolt: the eye tolerates the floor arriving over ~100 ms, and a hard
+       * snap in a headset is felt in the stomach.
+       */
+      const p = origin.position;
+      const settle =
+        groundY.current +
+        groundOffset +
+        (standingLiftRef?.current ?? 0) -
+        p.y;
+      if (settle !== 0) {
+        p.y +=
+          settle * (1 - Math.exp(-FLOOR_FOLLOW_RATE * Math.min(delta, 0.1)));
       }
     }
 
@@ -276,7 +409,7 @@ export function NavmeshLocomotion({
     const mx = move?.xAxis ?? 0;
     const my = move?.yAxis ?? 0;
 
-    if (Math.hypot(mx, my) > DEADZONE) {
+    if (!seated.current && Math.hypot(mx, my) > DEADZONE) {
       // In session, three writes the HMD pose onto the default camera each
       // frame, so this is the direction the user is actually facing.
       state.camera.getWorldDirection(_forward);
@@ -418,29 +551,15 @@ export function NavmeshLocomotion({
         }
 
         /**
-         * FOLLOW THE FLOOR. The height comes from the step that was accepted,
-         * so it is the surface the player was just allowed onto and nothing
-         * else — no second sample that could name a different level, and no
-         * jump guard, because a step that would have jumped was refused rather
-         * than taken and then ignored.
+         * The height comes from the step that was accepted, so it is the
+         * surface the player was just allowed onto and nothing else — no
+         * second sample that could name a different level. The ease onto it
+         * happens above, every frame.
          *
          * Off the mesh (`ground` null) the last known storey stands, which is
-         * what lets the walk-back branch above crawl home at a sane height.
-         *
-         * Eased rather than snapped so a kerb reads as a step rather than a
-         * jolt: the eye tolerates the floor arriving over ~100 ms, and a hard
-         * snap in a headset is felt in the stomach.
+         * what lets the walk-back branch crawl home at a sane height.
          */
         if (ground != null) groundY.current = ground;
-
-        const settle =
-          groundY.current +
-          groundOffset +
-          (standingLiftRef?.current ?? 0) -
-          p.y;
-        if (settle !== 0) {
-          p.y += settle * (1 - Math.exp(-FLOOR_FOLLOW_RATE * dt));
-        }
       }
     }
 

@@ -5,13 +5,14 @@
  */
 
 import { Suspense, useEffect, useMemo } from "react";
-import { useAnimations, useGLTF } from "@react-three/drei";
+import { useAnimations } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useVenue } from "@/components/vr/data/venue-provider";
 import { instanceRepeats } from "./instancing";
 import { prepareMaterialsForVR } from "./materials";
-import "./loader";
+import { useEnvironmentLoaded } from "@/components/vr/experience/environment";
+import { useVenueGLTF } from "./loader";
 
 function VenueModelContent({
   path,
@@ -21,7 +22,9 @@ function VenueModelContent({
   /** Per venue — see `VRVenue.instancing`. */
   instancing: boolean;
 }) {
-  const { scene, animations } = useGLTF(path);
+  const { scene, animations } = useVenueGLTF(path);
+  // Before the pre-compile below — see `useEnvironmentLoaded`.
+  useEnvironmentLoaded();
 
   /**
    * PLAY WHAT THE MODEL SHIPS WITH — the same clips, the same way, as the flat
@@ -140,13 +143,11 @@ function VenueModelContent({
 /**
  * Own Suspense boundary, so a slow model does not blank the rest of the tree.
  *
- * NOT DISPOSED ON UNMOUNT, deliberately. `useGLTF` caches by path and both the
- * doll house and first person render the same object, so switching views must
- * not tear it down — and switching venues and back is common enough on this
- * route that keeping the parsed scene is worth the memory. The flat site's
- * `acquireGLTF`/`releaseGLTF` refcounting exists because it swaps between
- * venues constantly during a single session; here a venue change is a
- * deliberate act through a menu.
+ * NOT DISPOSED ON UNMOUNT. `useGLTF` caches by path and both the doll house
+ * and first person render the same object, so switching views must not tear it
+ * down. Leaving the VENUE does free it — `VenueRelease` in `../experience`
+ * calls `releaseVenueGLTF` once the swap is done, because every venue kept
+ * resident adds up to more GPU memory than a headset has.
  */
 export function VenueModel({
   pointerEvents,
@@ -179,4 +180,4 @@ export function VenueModel({
   );
 }
 
-export { preloadModel } from "./loader";
+export { preloadModel, releaseVenueGLTF } from "./loader";

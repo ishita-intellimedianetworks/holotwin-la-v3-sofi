@@ -199,7 +199,11 @@ export function VRToolbar({ store }: { store: XRStore }) {
             bump, so "put it back how it was" is one action with one meaning in
             either view.
           */}
-          <IconButton icon={glyph(HouseIcon)} onSelect={recentre} />
+          <IconButton
+            icon={glyph(HouseIcon)}
+            label={isFirstPerson ? "Back to start" : "Re-frame the model"}
+            onSelect={recentre}
+          />
 
           {/*
             ONE button for every destination in the venue, not a rail of them.
@@ -215,6 +219,7 @@ export function VRToolbar({ store }: { store: XRStore }) {
             venue.layouts.length + venue.hotspots.length > 0 && (
               <IconButton
                 icon={glyph(LayoutGridIcon)}
+                label="Resources"
                 onSelect={() => setOpenMenu("destinations")}
               />
             )}
@@ -232,12 +237,17 @@ export function VRToolbar({ store }: { store: XRStore }) {
           {isFirstPerson && !!venue.floorPlan && (
             <IconButton
               icon={glyph(MapIcon)}
+              label="Floor plan"
               onSelect={() => setOpenMenu("map")}
             />
           )}
 
           {isFirstPerson && (
-            <IconButton icon={glyph(BoxIcon)} onSelect={goToDollHouse} />
+            <IconButton
+              icon={glyph(BoxIcon)}
+              label="Doll house view"
+              onSelect={goToDollHouse}
+            />
           )}
 
           {/* Present in BOTH views, unlike the rest. Changing venue is a fact
@@ -245,12 +255,14 @@ export function VRToolbar({ store }: { store: XRStore }) {
           {VENUES.length > 1 && (
             <IconButton
               icon={glyph(MapPinIcon)}
+              label="Change venue"
               onSelect={() => setOpenMenu("venues")}
             />
           )}
 
           <IconButton
             icon={glyph(InfoIcon)}
+            label="Help"
             onSelect={() => setOpenMenu("instructions")}
           />
 
@@ -258,11 +270,13 @@ export function VRToolbar({ store }: { store: XRStore }) {
               on-screen way back, so the way back is B or Y on a controller. */}
           <IconButton
             icon={glyph(EyeOffIcon)}
+            label="Hide the bar (B / Y to show)"
             onSelect={() => setBarHidden(true)}
           />
 
           <IconButton
             icon={glyph(LogOutIcon)}
+            label="Leave VR"
             tone="danger"
             onSelect={() => store.getState().session?.end()}
           />

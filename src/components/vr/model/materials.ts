@@ -122,6 +122,44 @@ export function prepareMaterialsForVR(root: THREE.Object3D): void {
        * than flattened into diffuse.
        */
 
+      /**
+       * CUT-OUT SURFACES MUST NOT DISSOLVE IN THE PERIPHERY.
+       *
+       * glTF `alphaMode: MASK` becomes an `alphaTest` — a texel is drawn only if
+       * its alpha is at least the cutoff. Mipmapping AVERAGES alpha, and on a
+       * sparse cut-out (a grille, a gate screen, a perforated facade) the
+       * average falls below the cutoff within a few levels: the memorial's
+       * gate screens (`_197`, 41 meshes, one at every gate hotspot) and outer
+       * shell (`_30`) go from 12–24% of texels drawn at full size to 0% three
+       * or four mips down.
+       *
+       * The flat site never reaches those mips. A headset does, constantly: it
+       * has fewer pixels per degree than a monitor, a side wall is seen at a
+       * grazing angle, and fixed foveation (`xr-store`) shades the edges of
+       * each eye at reduced resolution — all three push the sampler to coarser
+       * mips. The result is walls that exist and are simply never drawn,
+       * worst at the sides of the view.
+       *
+       * So: no mips on a cut-out's texture — the alpha a texel has is the alpha
+       * it keeps at any distance — and alpha-to-coverage, which turns the hard
+       * cutoff into MSAA coverage so the now-unfiltered edges do not shimmer.
+       * These textures are small (the largest is 576×522), so dropping their
+       * mip chains costs nothing measurable.
+       */
+      const standard = material as THREE.MeshStandardMaterial;
+      if (material.alphaTest > 0 && !material.transparent) {
+        const map = standard.map;
+        if (map && map.generateMipmaps !== false) {
+          map.generateMipmaps = false;
+          map.minFilter = THREE.LinearFilter;
+          map.needsUpdate = true;
+        }
+        if (!material.alphaToCoverage) {
+          material.alphaToCoverage = true;
+          changed = true;
+        }
+      }
+
       if (typeof physical.transmission === "number" && physical.transmission > 0) {
         physical.transmission = 0;
         changed = true;

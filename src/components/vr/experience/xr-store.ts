@@ -61,4 +61,12 @@ export const store = createXRStore({
    * only way in is our button, which appears once loading is done.
    */
   offerSession: false,
+
+  /**
+   * NO AUTO-ENTER ON A GRANTED SESSION, for the same reason. By default the
+   * store enters any session the browser grants on navigation (arriving here
+   * from another immersive page), which again skips `onEnterVrClick` — no
+   * exit-reload handler, no wait for the venue to load.
+   */
+  enterGrantedSession: false,
 });

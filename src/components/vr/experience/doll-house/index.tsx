@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { VenueModel } from "@/components/vr/model";
+import { useVenueGLTF } from "@/components/vr/model/loader";
 import { useVenue } from "@/components/vr/data/venue-provider";
+import { pressWasSpentOnDock } from "../bar-toggle";
 import { useVRState } from "../state";
 import { useDollHouseRotation } from "./hooks/use-doll-house-rotation";
 
@@ -45,7 +46,7 @@ const TABLE_SPAN_FALLBACK = 1.6;
  * suspends on work that is happening anyway rather than fetching a second copy.
  */
 function useTableFit(path: string, tableSpan: number) {
-  const { scene } = useGLTF(path);
+  const { scene } = useVenueGLTF(path);
 
   return useMemo(() => {
     const box = new THREE.Box3().setFromObject(scene);
@@ -131,7 +132,13 @@ export function DollHouse({
       <group
         ref={modelRef}
         scale={scale}
-        onPointerDown={interactive ? onEnter : undefined}
+        onPointerDown={
+          interactive
+            ? () => {
+                if (!pressWasSpentOnDock()) onEnter();
+              }
+            : undefined
+        }
       >
         {/*
           Recentred INSIDE the rotating group, so the model spins about its own

@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import "@/components/vr/model/loader";
+import { useVenueGLTF } from "@/components/vr/model/loader";
 
 /**
  * The active venue model's world bounding box.
@@ -22,7 +21,7 @@ export function useModelBounds(path: string): {
   size: THREE.Vector3;
   center: THREE.Vector3;
 } {
-  const { scene } = useGLTF(path);
+  const { scene } = useVenueGLTF(path);
 
   return useMemo(() => {
     const box = new THREE.Box3().setFromObject(scene);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Cache } from "three";
 
 /**
@@ -17,13 +17,23 @@ import { Cache } from "three";
  * HOW IT AVOIDS DOWNLOADING TWICE. `useGLTF` takes no `onProgress`, so the
  * bytes have to be counted before it runs. Fetching them and throwing them away
  * would mean paying for the model twice over — so instead the buffer is put
- * into `THREE.Cache` under the same url. `FileLoader.load` checks that cache
- * first and returns the hit without touching the network, so the loader gets
- * the bytes this already has.
+ * into `THREE.Cache` under the key `FileLoader` looks up, `file:<url>`.
+ * `FileLoader.load` checks that cache first and returns the hit without
+ * touching the network, so the loader gets the bytes this already has.
  *
- * That is also why `Cache.enabled` is set here. It is a three-wide global, but
- * this module only loads on the VR route, and the entries are removed on the
- * way out.
+ * THE KEY IS `file:<url>`, NOT `<url>`. three prefixes it, and storing under
+ * the bare url meant the loader never found the prefetch: every venue
+ * downloaded twice, and the bar measured the copy nothing used.
+ *
+ * AND THE LOADER HAS TO WAIT FOR IT. A `useGLTF` that starts while the
+ * prefetch is still streaming misses the cache just the same, so the prefetch
+ * lives in a module-level registry and `useVenueGLTF` (`model/loader`)
+ * suspends on it before loading. One download, and it is the one the bar
+ * measures.
+ *
+ * `Cache.enabled` is a three-wide global, so it is on only while the VR route
+ * is mounted (`setAssetCacheEnabled`), and each entry is dropped as soon as
+ * the parsed result exists — see `releaseAssetBytes`.
  */
 
 export interface AssetProgress {
@@ -70,7 +80,53 @@ const IDLE: AssetProgress = {
   error: null,
 };
 
-Cache.enabled = true;
+/** How often byte progress is published, at most. */
+const PUBLISH_MS = 33;
+
+/** The key `FileLoader` reads and writes. */
+const cacheKey = (url: string) => `file:${url}`;
+
+/**
+ * One download per url, shared by every caller: the progress hook reads its
+ * bytes, the loader waits on its promise.
+ */
+interface Prefetch {
+  /** Settles when the bytes are in the cache, or the fetch failed. Never rejects. */
+  promise: Promise<void>;
+  loaded: number;
+  /** 0 while unknown. */
+  total: number;
+  done: boolean;
+  error: string | null;
+  listeners: Set<() => void>;
+}
+
+const prefetches = new Map<string, Prefetch>();
+
+/**
+ * An already-settled promise React can read WITHOUT suspending. React's `use`
+ * checks a thenable's `status` field first; a plain `Promise.resolve()` has
+ * none, so every render handed a fresh one would suspend again, forever.
+ */
+const SETTLED = Object.assign(Promise.resolve(), {
+  status: "fulfilled" as const,
+  value: undefined,
+});
+
+/** Urls whose parsed result already exists — nothing to fetch for those. */
+const parsed = new Set<string>();
+
+/**
+ * On while the VR route is mounted, off when it goes. `FileLoader` caches
+ * EVERYTHING it loads while this is on — the HDR, the Draco decoder — so it is
+ * not left on for the flat site after a client-side navigation away.
+ */
+export function setAssetCacheEnabled(enabled: boolean): void {
+  Cache.enabled = enabled;
+  // Only the settled bytes go. In-flight entries stay: StrictMode's
+  // mount-cleanup-mount would otherwise start every venue's download twice.
+  if (!enabled) Cache.clear();
+}
 
 /**
  * Stream one url, reporting bytes as they arrive, and hand back the buffer.
@@ -102,13 +158,15 @@ Cache.enabled = true;
  *
  * The decompressed bytes the reader yields match HEAD's figure exactly — the
  * browser decodes transparently — so the two are the same scale.
+ *
+ * NOT ABORTABLE. The download is shared with the loader, which may be waiting
+ * on it after the screen that started it has gone.
  */
 async function streamInto(
   url: string,
-  signal: AbortSignal,
   onBytes: (delta: number, total: number) => void,
 ): Promise<ArrayBuffer> {
-  const response = await fetch(url, { signal });
+  const response = await fetch(url);
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
   const total = Number(response.headers.get("content-length")) || 0;
@@ -116,7 +174,7 @@ async function streamInto(
   if (total === 0) {
     // Not awaited: see the note above. A failure leaves the bar indeterminate,
     // which is exactly what it would have been anyway.
-    void fetch(url, { method: "HEAD", signal })
+    void fetch(url, { method: "HEAD" })
       .then((head) => Number(head.headers.get("content-length")) || 0)
       .then((size) => {
         if (size > 0) onBytes(0, size);
@@ -161,6 +219,81 @@ async function streamInto(
 }
 
 /**
+ * Start (or join) the download of `url`.
+ *
+ * A url that has already been parsed settles at once: the loader has it, and
+ * re-downloading it only to hold the gate up is what a revisit used to cost.
+ */
+export function prefetchAsset(url: string): Prefetch {
+  const existing = prefetches.get(url);
+  if (existing) return existing;
+
+  Cache.enabled = true;
+
+  const entry: Prefetch = {
+    promise: SETTLED,
+    loaded: 0,
+    total: 0,
+    done: false,
+    error: null,
+    listeners: new Set(),
+  };
+  const notify = () => {
+    for (const listener of entry.listeners) listener();
+  };
+
+  if (parsed.has(url) || Cache.get(cacheKey(url)) !== undefined) {
+    entry.done = true;
+  } else {
+    entry.promise = streamInto(url, (delta, total) => {
+      entry.loaded += delta;
+      // NEVER DOWNGRADE a known size back to unknown. The HEAD reply and the
+      // body's own chunks both report through here, and the chunks carry 0
+      // whenever the response had no length — so assigning unconditionally
+      // would erase the figure HEAD just supplied on the very next chunk.
+      if (total > 0) entry.total = total;
+      notify();
+    }).then(
+      (buffer) => {
+        Cache.add(cacheKey(url), buffer);
+        entry.done = true;
+        notify();
+      },
+      (err: unknown) => {
+        // Not fatal — the loader will simply fetch the url itself. KEPT in the
+        // registry: dropping it would have the waiting loader start a fresh
+        // prefetch on its retry, and against a url that keeps failing that is
+        // a loop. `forgetAsset` clears it when the venue is left.
+        entry.done = true;
+        entry.error = err instanceof Error ? err.message : "download failed";
+        notify();
+      },
+    );
+  }
+
+  prefetches.set(url, entry);
+  return entry;
+}
+
+/**
+ * The loader has parsed `url`: drop the raw bytes. `useGLTF` keeps the parsed
+ * scene on its own; these are the undecoded bytes on top of it, and on a
+ * headset that is megabytes worth not holding.
+ */
+export function releaseAssetBytes(url: string): void {
+  parsed.add(url);
+  Cache.remove(cacheKey(url));
+  prefetches.delete(url);
+}
+
+/** The parsed result of `url` has been thrown away; a revisit must fetch. */
+export function forgetAsset(url: string): void {
+  parsed.delete(url);
+  Cache.remove(cacheKey(url));
+  prefetches.delete(url);
+}
+
+/**
  * Prefetch `urls`, reporting combined byte progress.
  *
  * Pass an empty array — or nothing — and it reports `ready` immediately, so a
@@ -191,11 +324,6 @@ export function useAssetProgress(
     key,
   }));
 
-  // The totals live in refs: they are written once per chunk, which is far more
-  // often than the component should render.
-  const loaded = useRef(0);
-  const totals = useRef<Record<string, number>>({});
-
   useEffect(() => {
     const list = key ? key.split("|") : [];
     // Nothing to fetch. The hook returns `IDLE` outright for this case (see the
@@ -203,89 +331,55 @@ export function useAssetProgress(
     // would be a render cascade for a value that is already known.
     if (list.length === 0) return;
 
-    const controller = new AbortController();
     let cancelled = false;
-    loaded.current = 0;
-    totals.current = {};
+    const entries = list.map(prefetchAsset);
 
     /**
-     * Coalesced to one update per animation frame. A 9 MB body arrives in
-     * thousands of chunks and a `setState` per chunk would spend the whole
-     * download re-rendering the very screen it is trying to draw.
+     * Coalesced to one update per ~30 ms. A 9 MB body arrives in thousands of
+     * chunks and a `setState` per chunk would spend the whole download
+     * re-rendering the very screen it is trying to draw.
+     *
+     * A TIMER, NEVER `requestAnimationFrame`. While an immersive session is
+     * running the browser suspends the window's animation frames — only the
+     * session's own loop runs — so a switch of venue from inside the headset
+     * queued its "done" behind a frame that never came, and the bar sat at its
+     * 95% cap until some unrelated input forced a render.
      */
     let queued = false;
     const publish = () => {
       if (queued || cancelled) return;
       queued = true;
-      requestAnimationFrame(() => {
+      window.setTimeout(() => {
         queued = false;
         if (cancelled) return;
-        const total = Object.values(totals.current).reduce((a, b) => a + b, 0);
+        const loaded = entries.reduce((sum, e) => sum + e.loaded, 0);
+        const total = entries.reduce((sum, e) => sum + e.total, 0);
+        const allDone = entries.every((e) => e.done);
         // EVERY url must have declared a length, not just one of them: a venue
         // whose model is measurable and whose navmesh is not has no meaningful
-        // combined percentage, since the denominator is missing a term.
-        const measurable = list.every((url) => (totals.current[url] ?? 0) > 0);
-        setState((prev) => ({
-          // `prev` only if it is about THIS key; otherwise start from a clean
-          // slate, since the fields being spread describe a different venue.
-          ...(prev.key === key ? prev : { ...IDLE, ready: false, key }),
-          loaded: loaded.current,
+        // combined percentage, since the denominator is missing a term. A url
+        // that needed no download at all is as good as measured.
+        const measurable =
+          total > 0 && entries.every((e) => e.total > 0 || e.done);
+        setState({
+          key,
+          loaded,
           total,
-          indeterminate: !measurable,
-          fraction: measurable ? Math.min(1, loaded.current / total) : 0,
-        }));
-      });
+          // Finished is finished, however little was known on the way.
+          indeterminate: allDone ? false : !measurable,
+          fraction: allDone ? 1 : measurable ? Math.min(1, loaded / total) : 0,
+          ready: allDone,
+          error: entries.find((e) => e.error)?.error ?? null,
+        });
+      }, PUBLISH_MS);
     };
 
-    Promise.all(
-      list.map(async (url) => {
-        // Already fetched — by a previous visit to this venue, or a remount.
-        if (Cache.get(url) !== undefined) return;
-        const buffer = await streamInto(
-          url,
-          controller.signal,
-          (delta, total) => {
-            loaded.current += delta;
-            // NEVER DOWNGRADE a known size back to unknown. The HEAD reply and
-            // the body's own chunks both report through here, and the chunks
-            // carry 0 whenever the response had no length — so assigning
-            // unconditionally would erase the figure HEAD just supplied on the
-            // very next chunk.
-            if (total > 0) totals.current[url] = total;
-            publish();
-          },
-        );
-        if (!cancelled) Cache.add(url, buffer);
-      }),
-    )
-      .then(() => {
-        if (!cancelled) {
-          setState((prev) => ({
-            ...(prev.key === key ? prev : { ...IDLE, key }),
-            fraction: 1,
-            // Finished is finished, however little was known on the way.
-            indeterminate: false,
-            ready: true,
-          }));
-        }
-      })
-      .catch((err: unknown) => {
-        if (cancelled || controller.signal.aborted) return;
-        // Ready anyway — see `error` above. The loader will fetch it itself.
-        setState((prev) => ({
-          ...(prev.key === key ? prev : { ...IDLE, key }),
-          ready: true,
-          error: err instanceof Error ? err.message : "download failed",
-        }));
-      });
+    for (const e of entries) e.listeners.add(publish);
+    publish();
 
     return () => {
       cancelled = true;
-      controller.abort();
-      // Do NOT hold the raw buffers past this screen. `useGLTF` keeps the
-      // parsed scene alive on its own; these are the undecoded bytes on top of
-      // it, and on a headset that is megabytes worth keeping out of the way.
-      for (const url of list) Cache.remove(url);
+      for (const e of entries) e.listeners.delete(publish);
     };
   }, [key]);
 

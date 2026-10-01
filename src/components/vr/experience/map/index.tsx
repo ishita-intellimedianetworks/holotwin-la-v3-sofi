@@ -17,8 +17,14 @@ import { PanelHeader, PrimaryButton } from "../ui/panel-parts";
 import { VRText } from "../ui/text";
 import { COLOR, RADIUS, SPACE, TEXT } from "../ui/tokens";
 import { useVRState } from "../state";
+import { useReleaseSelect } from "../ui/menu-row";
 import { drawPlan, type ClickMarker } from "./draw";
-import { buildPins, flatDistance, planBounds } from "./pins";
+import {
+  buildPins,
+  distanceToLayout,
+  flatDistance,
+  planBounds,
+} from "./pins";
 import { PLAN_TEXELS, usePlanCanvas, type PlanCanvas } from "./plan-canvas";
 
 /**
@@ -52,12 +58,13 @@ const HERE_RADIUS = 3;
 /**
  * Press radius on the plan, in canvas pixels at 1× zoom.
  *
- * 36 rather than the flat map's 18, and the canvas is three times the size, so
- * in plan terms this is TIGHTER than the mouse version — about 12 flat pixels.
- * A ray is less accurate than a mouse but this canvas is far larger, and being
- * looser would make two adjacent gates impossible to tell apart.
+ * 48 against the flat map's 18, on a canvas three times the size — about 16
+ * flat pixels. Sized to the pins, which are drawn half as large again as the
+ * flat map's (≈38 px radius, `PIN_SCALE` in ./draw): the whole disc answers a
+ * press, not just its middle. Any looser and two adjacent gates could not be
+ * told apart.
  */
-const HIT_PX = 36;
+const HIT_PX = 48;
 
 /**
  * A press that travels further than this is a scroll of the card, not a tap on
@@ -120,7 +127,7 @@ const _dir = new THREE.Vector3();
 
 export function MapPanel({ onClose }: { onClose: () => void }) {
   const venue = useVenue();
-  const { teleportTo, revealDestination } = useVRState();
+  const { teleportTo, revealDestination, originRef } = useVRState();
   const camera = useThree((state) => state.camera);
 
   /**
@@ -147,10 +154,10 @@ export function MapPanel({ onClose }: { onClose: () => void }) {
   const { box } = useModelBounds(venue.model);
   const bounds = useMemo(() => planBounds(box), [box]);
 
-  const plan = usePlanCanvas(venue.floorPlan);
-
   /** Set whenever something the drawing depends on changes. */
   const dirty = useRef(true);
+
+  const plan = usePlanCanvas(venue.floorPlan, dirty);
 
   /**
    * The same canvas, reachable from the frame loop.
@@ -269,12 +276,15 @@ export function MapPanel({ onClose }: { onClose: () => void }) {
     let nearest: string | null = null;
     let nearestDistance = HERE_RADIUS;
     for (const row of rowsRef.current) {
-      for (const [px, , pz] of row.pins) {
-        const d = flatDistance(_head.x, _head.z, px, pz);
-        if (d < nearestDistance) {
-          nearestDistance = d;
-          nearest = row.destinationId;
-        }
+      // The viewpoint counts too: standing where a destination is viewed FROM
+      // is being there, even when its markers are a car park away.
+      const d = Math.min(
+        distanceToLayout(_head.x, _head.z, row),
+        flatDistance(_head.x, _head.z, row.position[0], row.position[2]),
+      );
+      if (d < nearestDistance) {
+        nearestDistance = d;
+        nearest = row.destinationId;
       }
     }
 
@@ -367,10 +377,19 @@ export function MapPanel({ onClose }: { onClose: () => void }) {
       click.current = { px: ipx, py: ipy, alpha: 1 };
       dirty.current = true;
       setSelectedId(null);
-      teleportTo({ position: [world.x, 0, world.z], rotationY: 0 });
+      /**
+       * KEEP THE CURRENT FACING. A plan press says where to stand, not which
+       * way to look — landing turned to face world −Z whichever way you were
+       * facing is a spin nobody asked for, and in a headset it disorients.
+       */
+      const yaw = originRef.current?.rotation.y ?? 0;
+      teleportTo({
+        position: [world.x, 0, world.z],
+        rotationY: THREE.MathUtils.radToDeg(yaw),
+      });
       onClose();
     },
-    [bounds, onClose, teleportTo, toPlanPixel],
+    [bounds, onClose, originRef, teleportTo, toPlanPixel],
   );
 
   const travel = useCallback(() => {
@@ -678,6 +697,9 @@ function Chip({
   active: boolean;
   onSelect: () => void;
 }) {
+  // On release: the chip row scrolls sideways, and dragging it must not
+  // change the filter. See `useReleaseSelect`.
+  const selectOnRelease = useReleaseSelect(onSelect);
   return (
     <Container
       flexShrink={0}
@@ -688,7 +710,7 @@ function Chip({
       borderColor={active ? COLOR.accent : COLOR.rowBorder}
       backgroundColor={active ? COLOR.accent : COLOR.rowRest}
       hover={{ backgroundColor: active ? COLOR.accentHover : COLOR.tile }}
-      onPointerDown={onSelect}
+      {...selectOnRelease}
     >
       <VRText
         fontSize={TEXT.label}

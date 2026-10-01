@@ -154,7 +154,7 @@ export function InstructionsMenu({
   return (
     // A CEILING, NOT A HEIGHT — the card hugs its lines and only scrolls once
     // there are too many. The count genuinely varies: first person in the
-    // stadium is nine rows, the doll house in the hotel room is five, and a
+    // stadium is up to eleven rows, a doll house as few as six, and a
     // fixed height sized for the longest leaves the shortest with a third of
     // its card empty. A panel with a hole in the bottom of it reads as
     // something that failed to load.
@@ -192,7 +192,7 @@ export function InstructionsMenu({
           <>
             <Row control={stick("Left stick")}>Walk</Row>
             <Row control={stick("Right stick")}>Turn on the spot</Row>
-            <Row control={stick("Right trigger")}>Press what you point at</Row>
+            <Row control={stick("Trigger or pinch")}>Press what you point at</Row>
           </>
         ) : (
           <>
@@ -215,7 +215,7 @@ export function InstructionsMenu({
             <Row control={stick("Left stick ↑ ↓")}>
               Tip it towards you or away
             </Row>
-            <Row control={stick("Right trigger")}>
+            <Row control={stick("Trigger or pinch")}>
               Press the model to step inside
             </Row>
           </>
@@ -257,7 +257,7 @@ export function InstructionsMenu({
 
         <Row control={button(InfoIcon)}>Show this again</Row>
         <Row control={button(EyeOffIcon)}>
-          Hide the bar — B or Y brings it back
+          Hide the bar — B, Y or a pinch brings it back
         </Row>
         <Row control={button(LogOutIcon)}>Leave VR</Row>
       </PanelList>

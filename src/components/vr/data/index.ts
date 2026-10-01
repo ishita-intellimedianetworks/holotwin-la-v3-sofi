@@ -46,6 +46,14 @@ const degrees = (rotation: number[] | undefined): V3 => {
   return [x * RAD_TO_DEG, y * RAD_TO_DEG, z * RAD_TO_DEG];
 };
 
+/**
+ * A marker with NO authored rotation lies flat on the ground, as the flat
+ * site draws it (`hotspot.tsx`: `rotation ?? [-π/2, 0, -π/2]`). Zero is not
+ * the same thing — it stands the disc upright, edge-on from east and west, and
+ * that is how the memorial's parking markers were showing in VR.
+ */
+const FLAT_ON_GROUND: V3 = [-90, 0, -90];
+
 /** A pose the XR origin can be set to. Position is metres, `rotationY` degrees. */
 export interface VRPose {
   position: V3;
@@ -504,7 +512,14 @@ function collectPois(pois: DestinationsByCategory | undefined): {
     const group = categoryLabel(category);
 
     for (const poi of (entries ?? []) as Destination[]) {
-      const camera = poi.camera
+      /**
+       * AN ALL-ZERO CAMERA IS NO CAMERA. The stadium's four Event Updates are
+       * authored at [0, 0, 0] — a placeholder, not a place — and offering to
+       * travel there set the player down at the nearest floor to the world
+       * origin, out on the pitch.
+       */
+      const camera =
+        poi.camera && poi.camera.position?.some((n) => n !== 0)
         ? {
             position: v3(poi.camera.position),
             rotationY: yawOf(poi.camera.rotation),
@@ -624,7 +639,7 @@ function collectPois(pois: DestinationsByCategory | undefined): {
           crowd: poi.crowd,
           crowdNote: poi.crowdNote,
           position: v3(point.position),
-          rotation: degrees(point.rotation),
+          rotation: point.rotation ? degrees(point.rotation) : FLAT_ON_GROUND,
           note: point.note ?? poi.note,
           points: point.points,
           camera,
@@ -715,9 +730,10 @@ export const VENUES: VRVenue[] = (cfg.scenes as RawScene[])
        *
        * `scenes.json` names the model the flat site draws, and a desktop GPU
        * draws it happily — one eye, no deadline. A headset draws it twice
-       * against 13.9 ms, and the memorial submitted 2,471 draw calls doing it.
-       * So VR gets a rebuilt copy: same geometry, same materials, same
-       * coordinates, merged so it can be submitted in 201.
+       * against 13.9 ms. So a venue can point VR at a rebuilt copy: same
+       * coordinates, merged by material so it submits far fewer draws. The
+       * village and stadium do; the memorial currently opts out and loads the
+       * flat site's file — see its entry in `vr-scenes.json`.
        *
        * A path here rather than a flag, because the two files are a fact about
        * the assets on disk. `npm run vr:optimize` produces them and

@@ -16,6 +16,7 @@ import {
   type NoticeKindKey,
 } from "@/components-v5/shared/notice-kind";
 import type { VRNotice } from "@/components/vr/data";
+import { useReleaseSelect } from "../ui/menu-row";
 import { PanelList } from "../ui/panel-list";
 import { PanelHeader } from "../ui/panel-parts";
 import { VRText } from "../ui/text";
@@ -68,6 +69,9 @@ function Notice({
 }) {
   const { key, color } = noticeKind(notice.option, COLOR.accentBright);
   const Icon = KIND_GLYPH[key];
+  // On release, not press: the board scrolls, and grabbing it to scroll must
+  // not teleport you. See `useReleaseSelect`.
+  const selectOnRelease = useReleaseSelect(onSelect);
 
   /**
    * A posted-at time, from the notice's own tags where one is authored and
@@ -101,7 +105,7 @@ function Notice({
        * error boundary. `IconButton` documents the same trap.
        */
       {...(onSelect ? { hover: { backgroundColor: COLOR.rowHover } } : {})}
-      onPointerDown={onSelect}
+      {...selectOnRelease}
     >
       <Container
         width={TILE}

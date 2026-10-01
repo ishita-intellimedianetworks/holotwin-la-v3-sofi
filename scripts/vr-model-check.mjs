@@ -234,6 +234,9 @@ function report(label, file, a, baseline) {
   console.log(
     `  ${"vertices".padEnd(14)}${kilo(a.vertices).padStart(10)}`,
   );
+  console.log(
+    `  ${"image bytes".padEnd(14)}${mb(a.textureBytes).padStart(10)}  (compressed; GPU cost is by pixel size)`,
+  );
 
   console.log(
     `\n  per frame in stereo: ${a.drawCalls * 2} draw calls, ${kilo(a.triangles * 2)} triangles`,
@@ -306,6 +309,10 @@ function report(label, file, a, baseline) {
 const args = process.argv.slice(2);
 const againstAt = args.indexOf("--against");
 const baselineFile = againstAt >= 0 ? args[againstAt + 1] : null;
+if (againstAt >= 0 && (!baselineFile || baselineFile.startsWith("--"))) {
+  console.error("--against needs a baseline .glb after it.");
+  process.exit(2);
+}
 // `againstAt + 1` is 0 when there is no `--against`, which silently ate the
 // first file argument — `vr-model-check.mjs cand.glb` reported every venue in
 // scenes.json instead of the candidate. Only skip that slot when the flag is
@@ -358,6 +365,14 @@ if (targets.length > 0) {
 ${s.key}: MISSING ${url}`);
       failed = true;
       continue;
+    }
+
+    // A venue with no navmesh on disk loads a model nobody can walk in.
+    const navmesh = path.join(ROOT, "public", s.navmeshUrl);
+    if (!fs.existsSync(navmesh)) {
+      console.log(`
+${s.key}: MISSING navmesh ${s.navmeshUrl}`);
+      failed = true;
     }
 
     // The flat model is the baseline for a rebuild, so a pass that moved the

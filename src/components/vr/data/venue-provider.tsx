@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -73,16 +74,29 @@ export function VRVenueProvider({
    *  keep this in step. */
   const venueIdRef = useRef(venueId);
 
+  const [switchPhase, setSwitchPhase] = useState<VenueSwitchPhase>("idle");
+  const phaseRef = useRef<VenueSwitchPhase>("idle");
+
+  /** The pending swap of an in-flight `switchVenue`, so it can be called off. */
+  const switchTimer = useRef<number | null>(null);
+
   const setVenue = useCallback((id: string) => {
+    /**
+     * A direct set wins over a fade still in flight. Left running, the fade's
+     * timer would land afterwards and put back the older target.
+     */
+    if (switchTimer.current != null) {
+      window.clearTimeout(switchTimer.current);
+      switchTimer.current = null;
+      phaseRef.current = "idle";
+      setSwitchPhase("idle");
+    }
     // Guarded, not because a redundant set is expensive in itself, but because
     // it would re-key the state provider and throw away a perfectly good visit.
     const next = getVenue(id).id;
     venueIdRef.current = next;
     setVenueId((current) => (current === next ? current : next));
   }, []);
-
-  const [switchPhase, setSwitchPhase] = useState<VenueSwitchPhase>("idle");
-  const phaseRef = useRef<VenueSwitchPhase>("idle");
 
   const switchVenue = useCallback((id: string) => {
     const next = getVenue(id).id;
@@ -91,7 +105,8 @@ export function VRVenueProvider({
 
     phaseRef.current = "in";
     setSwitchPhase("in");
-    window.setTimeout(() => {
+    switchTimer.current = window.setTimeout(() => {
+      switchTimer.current = null;
       venueIdRef.current = next;
       setVenueId(next);
       phaseRef.current = "hold";
@@ -99,6 +114,13 @@ export function VRVenueProvider({
     }, VENUE_FADE_IN_MS);
     return true;
   }, []);
+
+  useEffect(
+    () => () => {
+      if (switchTimer.current != null) window.clearTimeout(switchTimer.current);
+    },
+    [],
+  );
 
   const finishSwitch = useCallback(() => {
     if (phaseRef.current !== "hold") return;

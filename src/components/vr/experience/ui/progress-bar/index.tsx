@@ -9,11 +9,10 @@ import { RADIUS } from "../tokens";
 /**
  * The loading line — the flat site's `HoloTwinHud` bar, drawn in the headset.
  *
- * The same look: a faint cyan track, a fill that runs from the site's cyan
- * (#0fb7ff) to its mint (#00ffcc), and a soft glow around it — the CSS version's
- * `box-shadow`. uikit has no shadows and no gradients, so both are built from
- * layers: the glow is two wider, fainter copies of the fill behind it, and the
- * gradient is a brighter head riding the leading edge.
+ * ONE COLOUR: a faint cyan track, a solid cyan fill (#0fb7ff) and a soft glow
+ * around it — the CSS version's `box-shadow`. uikit has no shadows, so the glow
+ * is two wider, fainter copies of the fill behind it. (It had a mint head on
+ * the leading edge standing in for the site's gradient; VR drops it.)
  *
  * ALWAYS PROGRESSIVE. The number it is given only moves forward (see
  * `../../load-progress`), and the drawn width EASES toward it rather than
@@ -28,14 +27,10 @@ const LINE = 6;
 const GLOW_NEAR = 6;
 const GLOW_FAR = 14;
 
-/** The leading head — the brighter end of the gradient. */
-const HEAD = 0.18;
-
 /** How quickly the drawn width catches up with the real one, per second. */
 const EASE_RATE = 6;
 
 const CYAN = "#0fb7ff";
-const MINT = "#00ffcc";
 
 /**
  * A plain function outside the component: writing to a value that came out of a
@@ -107,7 +102,7 @@ export function ProgressBar({ percent }: { /** 0–100. */ percent: number }) {
       {layer(GLOW_FAR, CYAN, 0.12)}
       {layer(GLOW_NEAR, CYAN, 0.28)}
 
-      {/* The line, with the mint head at its leading edge. */}
+      {/* The line. */}
       <Container
         positionType="absolute"
         positionLeft={0}
@@ -115,16 +110,7 @@ export function ProgressBar({ percent }: { /** 0–100. */ percent: number }) {
         height="100%"
         borderRadius={RADIUS.dot}
         backgroundColor={CYAN}
-        flexDirection="row"
-        justifyContent="flex-end"
-      >
-        <Container
-          width={`${HEAD * 100}%`}
-          height="100%"
-          borderRadius={RADIUS.dot}
-          backgroundColor={MINT}
-        />
-      </Container>
+      />
     </Container>
   );
 }

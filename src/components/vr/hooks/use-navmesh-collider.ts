@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { useVenue } from "@/components/vr/data/venue-provider";
-import "@/components/vr/model/loader";
+import { useVenueGLTF } from "@/components/vr/model/loader";
 
 /**
  * The navmesh, turned into the one question locomotion asks: may the player
@@ -463,76 +462,105 @@ export function useNavmeshCollider(): NavmeshCollider {
   const venue = useVenue();
   const path = venue.navmesh;
 
-  const gltf = useGLTF(path);
+  const gltf = useVenueGLTF(path);
 
+  /**
+   * BUILT ONCE PER NAVMESH, not once per caller. `TeleportDriver` and the
+   * walk both want it, and the walk remounts on every doll house → first
+   * person switch; a per-component memo rebuilt the stadium's 43k-triangle
+   * grid on the main thread, inside a live session, each time.
+   */
   return useMemo(() => {
-    const root = gltf.scene;
-    root.updateMatrixWorld(true);
+    const cached = colliders.get(path);
+    if (cached && cached.gltf === gltf) return cached.value;
+    if (cached) disposeCollider(cached.value);
+    const value = buildCollider(gltf.scene);
+    colliders.set(path, { gltf, value });
+    return value;
+  }, [path, gltf]);
+}
 
-    // EVERY mesh, not just the first — a navmesh is often one mesh per area,
-    // and the rest would silently become walls.
-    const sources: THREE.Mesh[] = [];
-    root.traverse((node) => {
-      const mesh = node as THREE.Mesh;
-      if (mesh.isMesh && mesh.geometry) sources.push(mesh);
-    });
-    if (sources.length === 0) return EMPTY;
+const colliders = new Map<string, { gltf: object; value: NavmeshCollider }>();
 
-    // Position-only and non-indexed: the walkable test needs nothing else, and
-    // dropping the rest avoids an attribute mismatch between meshes.
-    const positions: number[] = [];
-    for (const mesh of sources) {
-      const geo = mesh.geometry.clone();
-      geo.applyMatrix4(mesh.matrixWorld);
-      const flat = geo.index ? geo.toNonIndexed() : geo;
-      const attr = flat.getAttribute("position");
-      for (let i = 0; i < attr.count; i++) {
-        positions.push(attr.getX(i), attr.getY(i), attr.getZ(i));
-      }
-      flat.dispose();
-      if (flat !== geo) geo.dispose();
+function disposeCollider({ collider }: NavmeshCollider): void {
+  if (!collider) return;
+  collider.geometry.dispose();
+  (collider.material as THREE.Material).dispose();
+}
+
+/** Drop a navmesh's collider when its venue is left. See `model/loader`. */
+export function releaseNavmeshCollider(path: string): void {
+  const cached = colliders.get(path);
+  colliders.delete(path);
+  if (cached) disposeCollider(cached.value);
+}
+
+function buildCollider(root: THREE.Object3D): NavmeshCollider {
+  root.updateMatrixWorld(true);
+
+  // EVERY mesh, not just the first — a navmesh is often one mesh per area,
+  // and the rest would silently become walls.
+  const sources: THREE.Mesh[] = [];
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (mesh.isMesh && mesh.geometry) sources.push(mesh);
+  });
+  if (sources.length === 0) return EMPTY;
+
+  // Position-only and non-indexed: the walkable test needs nothing else, and
+  // dropping the rest avoids an attribute mismatch between meshes.
+  const positions: number[] = [];
+  for (const mesh of sources) {
+    const geo = mesh.geometry.clone();
+    geo.applyMatrix4(mesh.matrixWorld);
+    const flat = geo.index ? geo.toNonIndexed() : geo;
+    const attr = flat.getAttribute("position");
+    for (let i = 0; i < attr.count; i++) {
+      positions.push(attr.getX(i), attr.getY(i), attr.getZ(i));
     }
+    flat.dispose();
+    if (flat !== geo) geo.dispose();
+  }
 
-    const vertices = new Float32Array(positions);
+  const vertices = new Float32Array(positions);
 
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
-    geometry.computeBoundingBox();
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
+  geometry.computeBoundingBox();
 
-    const collider = new THREE.Mesh(
-      geometry,
-      new THREE.MeshBasicMaterial({
-        color: 0x00ff88,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.6,
-        depthTest: false,
-        side: THREE.DoubleSide,
-      }),
-    );
-    collider.renderOrder = 999;
-    collider.updateMatrixWorld(true);
+  const collider = new THREE.Mesh(
+    geometry,
+    new THREE.MeshBasicMaterial({
+      color: 0x00ff88,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.6,
+      depthTest: false,
+      side: THREE.DoubleSide,
+    }),
+  );
+  collider.renderOrder = 999;
+  collider.updateMatrixWorld(true);
 
-    // What `isWalkable` actually uses. The collider stays a real mesh so the
-    // debug wireframe still renders from it.
-    const grid = buildWalkGrid(vertices);
-    if (grid) walkGrids.set(collider, grid);
+  // What `isWalkable` actually uses. The collider stays a real mesh so the
+  // debug wireframe still renders from it.
+  const grid = buildWalkGrid(vertices);
+  if (grid) walkGrids.set(collider, grid);
 
-    const centroids: THREE.Vector3[] = [];
-    const position = geometry.getAttribute("position");
+  const centroids: THREE.Vector3[] = [];
+  const position = geometry.getAttribute("position");
 
-    for (let i = 0; i < position.count; i += 3) {
-      let x = 0;
-      let y = 0;
-      let z = 0;
-      for (let k = 0; k < 3; k++) {
-        x += position.getX(i + k);
-        y += position.getY(i + k);
-        z += position.getZ(i + k);
-      }
-      centroids.push(new THREE.Vector3(x / 3, y / 3, z / 3));
+  for (let i = 0; i < position.count; i += 3) {
+    let x = 0;
+    let y = 0;
+    let z = 0;
+    for (let k = 0; k < 3; k++) {
+      x += position.getX(i + k);
+      y += position.getY(i + k);
+      z += position.getZ(i + k);
     }
+    centroids.push(new THREE.Vector3(x / 3, y / 3, z / 3));
+  }
 
-    return { collider, centroids };
-  }, [gltf]);
+  return { collider, centroids };
 }
